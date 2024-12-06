@@ -1,2 +1,2 @@
 # Diplom_1
-Dpbt/Diplom_1
+Code for my graduate work
