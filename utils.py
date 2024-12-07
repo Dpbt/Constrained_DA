@@ -94,6 +94,16 @@ def generate_possible_manipulations(num_schools: int, preferences: np.ndarray, k
     return unique_manipulations
 
 
+def generate_statistic(num_schools: int, preferences: np.ndarray, k: int):
+    statistic = np.zeros((k, num_schools))
+
+    for preference in preferences:
+        for school_ind in range(k):
+            statistic[school_ind, preference[school_ind]] += 1
+
+    return statistic
+
+
 if __name__ == '__main__':
     x = generate_random_profiles(10, 5)
     # print(x)
