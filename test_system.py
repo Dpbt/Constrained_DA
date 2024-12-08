@@ -9,7 +9,7 @@ from tqdm import tqdm
 import warnings
 
 from utils import (generate_random_profiles, generate_school_capacities, generate_k_restricted_preferences,
-                   calculate_utility, calculate_utilities_from_prob)
+                   calculate_utility, calculate_utilities_from_prob, group_test_results)
 from algorithm import k_boston_algorithm, k_gs_algorithm, manipulation_algorithm, algorithm_sampler
 
 
@@ -159,7 +159,9 @@ def run_experiment(num_students: int,
                       "average_percentage_unassigned_students": average_percentage_unassigned_students[0]
                       }
 
-    experiment_results = pd.concat([experiment_results, pd.DataFrame([new_row_boston])], ignore_index=True)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=FutureWarning)
+        experiment_results = pd.concat([experiment_results, pd.DataFrame([new_row_boston])], ignore_index=True)
 
     for exp_num in range(1, num_schools + 1):
         new_row_gs = {"num_students": num_students,
@@ -219,7 +221,7 @@ def massive_run(tests: list, display_progress: bool = False):
             params['num_capacities'] = 1
 
             experiment_results = run_experiment(**params)
-            experiment_results.insert(0, 'experiment_number', int(exp_number + 1))
+            experiment_results.insert(0, 'experiment_number', int(exp_number) + 1)
 
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -237,7 +239,7 @@ def massive_run(tests: list, display_progress: bool = False):
                 params['capacities'] = capacities
 
                 experiment_results = run_experiment(**params)
-                experiment_results.insert(0, 'experiment_number', int(exp_number + 1))
+                experiment_results.insert(0, 'experiment_number', int(exp_number) + 1)
 
                 with warnings.catch_warnings():
                     warnings.filterwarnings("ignore", category=FutureWarning)
@@ -252,7 +254,7 @@ def parallel_run(tests: list, batch_size: int = 1, n_jobs: int = 1, display_prog
     num_batch = int(len(tests) / batch_size) if len(tests) % batch_size == 0 else int(len(tests) / batch_size) + 1
     tests_with_batch = [tests[i * batch_size: (i + 1) * batch_size] for i in range(num_batch)]
 
-    with Parallel(n_jobs=n_jobs, verbose=10, backend='threading') as parallel:
+    with Parallel(n_jobs=n_jobs, verbose=11, backend='threading') as parallel:
         results = parallel(
             delayed(massive_run)(test_batch, display_progress=display_progress) for test_batch in tests_with_batch)
 
@@ -261,21 +263,7 @@ def parallel_run(tests: list, batch_size: int = 1, n_jobs: int = 1, display_prog
     return test_results
 
 
-# test = [num_students, num_schools, capacities, num_repeats_profiles, num_repeat_sampler, epsilon, num_manipulations]
-
-
 if __name__ == '__main__':
-    # assignments, unassigned_students, utilities = run_experiment(algorithm='boston',
-    #                                                              num_students=10,
-    #                                                              num_schools=4,
-    #                                                              num_repeat=100,
-    #                                                              epsilon=0.1,
-    #                                                              num_manipulations=0)
-
-    # print(assignments)
-    # print(unassigned_students)
-    # print(utilities)
-    # print(preferences)
 
     num_students = 20
     num_schools = 8
@@ -286,41 +274,22 @@ if __name__ == '__main__':
     epsilon = 0.1
     num_manipulations = 5
 
-    # probabilities, utilities, manipulators, average_percentage_unassigned_students = run_experiment_k(algorithm='gs',
-    #                                                                                                 num_students=num_students,
-    #                                                                                                 num_schools=num_schools,
-    #                                                                                                 profiles=profiles,
-    #                                                                                                 capacities=capacities,
-    #                                                                                                 num_repeat_sampler=num_repeat_sampler,
-    #                                                                                                 k=k,
-    #                                                                                                 epsilon=epsilon,
-    #                                                                                                 num_manipulations=num_manipulations
-    #                                                                                                 )
-    #
-    # print(probabilities)
-    # print(utilities)
-    # print(manipulators)
-    # print(average_percentage_unassigned_students)
-
     start_time = time.time()
     tests = [{"num_students": 20, "num_schools": 8, "capacities": np.array([8, 4, 3, 1, 1, 1, 1, 1]), "num_capacities": 3, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5}]
-    tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeat_sampler": 1000, "epsilon": 0.02, "num_manipulations": 6},
-             {"num_students": 15, "num_schools": 6, "num_capacities": 5, "num_repeat_sampler": 1000, "epsilon": 0.02, "num_manipulations": 5},
-             {"num_students": 30, "num_schools": 5, "num_capacities": 5, "num_repeat_sampler": 1000, "epsilon": 0.02, "num_manipulations": 4}]
+    tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 3, "num_repeats_profiles": 5, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 6},
+             {"num_students": 15, "num_schools": 6, "num_capacities": 3, "num_repeats_profiles": 5, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
+             {"num_students": 30, "num_schools": 5, "num_capacities": 3, "num_repeats_profiles": 5, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 4}]
 
     pd.set_option('display.max_columns', None)
 
-    # experiment_results = run_experiment(num_students=num_students,
-    #                                     num_schools=num_schools,
-    #                                     num_repeats_profiles=5,
-    #                                     num_repeat_sampler=num_repeat_sampler,
-    #                                     epsilon=epsilon,
-    #                                     num_manipulations=num_manipulations)
-
-    # experiment_results = massive_run(tests)
     experiment_results = parallel_run(tests, batch_size=1, n_jobs=4, display_progress=False)
+
+    experiment_results = experiment_results[
+        ['experiment_number'] + [col for col in experiment_results.columns if col != 'experiment_number']]
+    experiment_results_grouped = group_test_results(experiment_results)
 
     print(experiment_results)
     print(time.time() - start_time)
 
     experiment_results.to_csv('experiment_results.csv', index=False)
+    experiment_results_grouped.to_csv('experiment_results_grouped.csv', index=False)

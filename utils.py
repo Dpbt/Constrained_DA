@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 # from algorithm import k_boston_algorithm, k_gs_algorithm
 
 # откуда фиксируется seed ?
@@ -104,6 +105,26 @@ def generate_statistic(num_schools: int, preferences: np.ndarray, k: int):
     return statistic
 
 
+def group_test_results(df: pd.DataFrame) -> pd.DataFrame:
+    groupby_columns = ["num_students", "num_schools", "num_capacities", "num_repeats_profiles",
+                       "num_repeat_sampler", "epsilon", "num_manipulations", "algorithm", "k"]
+
+    average_columns = ["average_utility",
+                       "average_percentage_manipulators", "average_percentage_unassigned_students"]
+
+    grouped_df = df.groupby(groupby_columns).agg(
+        experiment_number=('experiment_number', 'first'),
+        **{col: (col, 'mean') for col in average_columns}
+    ).reset_index()
+
+    grouped_df = grouped_df[
+        ['experiment_number'] + [col for col in grouped_df.columns if col != 'experiment_number']]
+
+    grouped_df = grouped_df.sort_values(by='experiment_number')
+
+    return grouped_df
+
+
 if __name__ == '__main__':
     x = generate_random_profiles(10, 5)
     # print(x)
@@ -117,10 +138,18 @@ if __name__ == '__main__':
     # result = generate_possible_manipulations(num_schools, preferences, k)
     # print(result)
 
-    prob = np.array([[0.33333333, 0.33333333, 0.33333333], [0.33333333, 0.33333333, 0.33333333],
-                     [0.33333333, 0.33333333, 0.33333333]])
-    profiles = np.array([[0.4365224, 0.29180088, 0.27167672], [0.55439957, 0.4264105, 0.01918993],
-                         [0.47070475, 0.39570134, 0.13359391]])
-    print(calculate_utilities_from_prob(3, 3, prob, profiles))
+    # prob = np.array([[0.33333333, 0.33333333, 0.33333333], [0.33333333, 0.33333333, 0.33333333],
+    #                  [0.33333333, 0.33333333, 0.33333333]])
+    # profiles = np.array([[0.4365224, 0.29180088, 0.27167672], [0.55439957, 0.4264105, 0.01918993],
+    #                      [0.47070475, 0.39570134, 0.13359391]])
+    # print(calculate_utilities_from_prob(3, 3, prob, profiles))
+
+    df = pd.read_csv('experiment_results.csv')
+
+    grouped_results = group_test_results(df)
+    print(grouped_results)
+
+    grouped_results.to_csv('experiment_results_grouped.csv', index=False)
+
 
 
