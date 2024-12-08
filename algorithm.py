@@ -5,6 +5,7 @@ from utils import (generate_subsets, generate_k_restricted_preferences, generate
 import random
 
 
+# Не нужен
 def k_boston_algorithm_expectation(num_students: int, num_schools: int, preferences: np.ndarray, capacities: np.ndarray, k: int
                        ) -> tuple[dict[int, list[int]], set[int]]:
     assignments = {school: 0 for school in range(num_schools)}
@@ -343,40 +344,28 @@ if __name__ == '__main__':
     capacities = generate_school_capacities(num_students=num_students, num_schools=num_schools)
     print("capacities", capacities, sep='\n')
 
-    # preferences, manipulators = manipulation_algorithm(algorithm="gs",
-    #                                                    num_students=num_students,
-    #                                                    num_schools=num_schools,
-    #                                                    profiles=profiles,
-    #                                                    capacities=capacities,
-    #                                                    k=3,
-    #                                                    epsilon=0.1,
-    #                                                    num_manipulations=1)
-    #
-    # print("preferences", preferences, sep='\n')
-    # print("manipulators", manipulators, sep='\n')
+
 
     preferences, manipulators = manipulation_algorithm(algorithm="gs",
                                                        num_students=num_students,
-                                                                                   num_schools=num_schools,
-                                                                                   profiles=profiles,
-                                                                                   capacities=capacities,
-                                                                                   k=k,
-                                                                                   epsilon=0.1,
-                                                                                   num_manipulations=1)
+                                                       num_schools=num_schools,
+                                                       profiles=profiles,
+                                                       capacities=capacities,
+                                                       k=k,
+                                                       epsilon=0.1,
+                                                       num_manipulations=1)
 
     print("preferences", preferences, sep='\n')
     print("manipulators", manipulators, sep='\n')
-    # print("probabilities", probabilities, sep='\n')
-    # print("utilities", utilities, sep='\n')
 
     probabilities, average_percentage_unassigned_students = algorithm_sampler(algorithm='gs',
-                                  num_students=num_students,
-                                  num_schools=num_schools,
-                                  preferences=preferences,
-                                  capacities=capacities,
-                                  k=k,
-                                  num_repeat=1000
-                                  )
+                                                                              num_students=num_students,
+                                                                              num_schools=num_schools,
+                                                                              preferences=preferences,
+                                                                              capacities=capacities,
+                                                                              k=k,
+                                                                              num_repeat=1000
+                                                                              )
 
     print("true probabilities", probabilities, sep='\n')
 
@@ -386,19 +375,5 @@ if __name__ == '__main__':
                                               profiles=profiles)
 
     print("true utilities", utilities, sep='\n')
-    #
-    # probabilities = algorithm_sampler(algorithm='k_gs',
-    #                                   num_students=num_students,
-    #                                   num_schools=num_schools,
-    #                                   preferences=np.array([[0, 1], [0, 1], [0, 1]]),
-    #                                   capacities=capacities,
-    #                                   k=k,
-    #                                   num_repeat=1000
-    #                                   )
-    #
-    # utilities = calculate_utilities_from_prob(num_students=num_students,
-    #                                           num_schools=num_schools,
-    #                                           probabilities=probabilities,
-    #                                           profiles=profiles)
-    #
-    # print("true utilities", utilities, sep='\n')
+
+

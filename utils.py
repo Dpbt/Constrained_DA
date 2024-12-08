@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
-# from algorithm import k_boston_algorithm, k_gs_algorithm
+from numba import njit, jit
+
 
 # откуда фиксируется seed ?
+
 
 def generate_random_profiles(num_students: int, num_schools: int):
     # Генерация случайных предпочтений
@@ -18,6 +20,7 @@ def generate_school_capacities(num_students: int, num_schools: int):
     capacities = np.sort(np.concatenate(([0], capacities, [num_students])))
     capacities = np.diff(capacities)
     return capacities
+
 
 def generate_k_restricted_preferences(profiles: np.ndarray, k: int):
     preferences = np.argsort(profiles, axis=1)[:, -1:-k-1:-1]
@@ -35,18 +38,9 @@ def calculate_utility(num_students: int, assignments: dict[int, list[int]], prof
 
 
 def calculate_utilities_from_prob(num_students: int, num_schools: int, probabilities: np.ndarray, profiles: np.ndarray):
-    # student_utility = {i: 0 for i in range(num_students)}
     student_utility = np.zeros(num_students)
-
     for student in range(num_students):
-        # print(student)
-        # print(probabilities[student])
-        # print(profiles[student])
-        # print(probabilities[student] * profiles[student])
-        # student_probabilities = probabilities[student]
-        # student_probabilities = student_probabilities[student_probabilities != 0]
         student_utility[student] = np.sum(probabilities[student][:num_schools] * profiles[student])
-
     return student_utility
 
 
@@ -120,7 +114,7 @@ def group_test_results(df: pd.DataFrame) -> pd.DataFrame:
     grouped_df = grouped_df[
         ['experiment_number'] + [col for col in grouped_df.columns if col != 'experiment_number']]
 
-    grouped_df = grouped_df.sort_values(by='experiment_number')
+    grouped_df = grouped_df.sort_values(by=['experiment_number', "k"])
 
     return grouped_df
 
@@ -131,7 +125,6 @@ if __name__ == '__main__':
     #
     # print(generate_k_restricted_preferences(x, 4))
 
-    # # Пример использования
     # num_schools = 5
     # preferences = np.array([1, 2, 4])
     # k = len(preferences)
