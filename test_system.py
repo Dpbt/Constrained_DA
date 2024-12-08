@@ -3,8 +3,6 @@ import time
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
-from ipywidgets import IntProgress
-from numpy.lib.function_base import average
 from tqdm import tqdm
 import warnings
 
@@ -27,6 +25,7 @@ def run_experiment_k(algorithm: str,
                      ):
     # На данный момент считается, что boston только для k = num_schools
     # Иначе, возможно, надо будет другую схему манипуляций для boston
+
     if algorithm == 'boston':
         k = num_schools
 
@@ -62,7 +61,6 @@ def run_experiment_k(algorithm: str,
     return probabilities, utilities, manipulators, average_percentage_unassigned_students
 
 
-# усреднение по профилям; среднее число манипуляторов
 def run_experiment(num_students: int,
                    num_schools: int,
                    capacities: np.ndarray,
@@ -235,7 +233,7 @@ def massive_run(tests: list, display_progress: bool = False):
             else:
                 params['num_capacities'] = 1
             for capacities_index in range(params['num_capacities']):
-                capacities = generate_school_capacities(num_students=num_students, num_schools=num_schools)
+                capacities = generate_school_capacities(num_students=test['num_students'], num_schools=test['num_schools'])
                 params['capacities'] = capacities
 
                 experiment_results = run_experiment(**params)
@@ -275,14 +273,22 @@ if __name__ == '__main__':
     num_manipulations = 5
 
     start_time = time.time()
-    tests = [{"num_students": 20, "num_schools": 8, "capacities": np.array([8, 4, 3, 1, 1, 1, 1, 1]), "num_capacities": 3, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5}]
-    tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 3, "num_repeats_profiles": 5, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 6},
-             {"num_students": 15, "num_schools": 6, "num_capacities": 3, "num_repeats_profiles": 5, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
-             {"num_students": 30, "num_schools": 5, "num_capacities": 3, "num_repeats_profiles": 5, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 4}]
+    # tests = [{"num_students": 20, "num_schools": 8, "capacities": np.array([8, 4, 3, 1, 1, 1, 1, 1]), "num_capacities": 3, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5}]
+    tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 6},
+             {"num_students": 10, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
+             {"num_students": 15, "num_schools": 6, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
+             {"num_students": 10, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
+             {"num_students": 30, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
+             {"num_students": 18, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
+             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
+             {"num_students": 20, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 7},
+             {"num_students": 15, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 3},
+             {"num_students": 30, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 4}]
+
 
     pd.set_option('display.max_columns', None)
 
-    experiment_results = parallel_run(tests, batch_size=1, n_jobs=4, display_progress=False)
+    experiment_results = parallel_run(tests, batch_size=1, n_jobs=-2, display_progress=False)
 
     experiment_results = experiment_results[
         ['experiment_number'] + [col for col in experiment_results.columns if col != 'experiment_number']]
