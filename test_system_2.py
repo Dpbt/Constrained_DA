@@ -83,20 +83,7 @@ def run_experiment(num_students: int,
     num_fair = round(num_students * (1 - manipulators_ratio))
     fair_indices = np.random.choice(num_students, num_fair, replace=False)
 
-    experiment_results = pd.DataFrame(columns=["num_students", "num_schools", "average_runtime", "capacities", "capacities_generated",
-                                               "num_capacities", "num_repeats_profiles",
-                                               "num_repeat_sampler", "epsilon", "manipulators_ratio",
-                                               "default_fair_num_student", "num_manipulations",
-                                               "algorithm", "k", "probabilities", "utilities", "average_utility",
-                                               "average_number_manipulations",
-                                               "average_actual_percentage_manipulators",
-                                               "average_percentage_unassigned_students"])
-
-    sum_probabilities = np.zeros((num_schools + 1, num_students, num_schools + 1))
-    sum_utilities = np.zeros((num_schools + 1, num_students))
-    sum_number_manipulations = np.zeros(num_schools + 1)
-    sum_number_manipulators = np.zeros(num_schools + 1)
-    sum_percentage_unassigned_students = np.zeros(num_schools + 1)
+    experiment_results = []
 
     k_boston = num_schools
 
@@ -118,11 +105,32 @@ def run_experiment(num_students: int,
             fair_indices=fair_indices,
             num_manipulations=num_manipulations)
 
-        sum_probabilities[0] += probabilities
-        sum_utilities[0] += utilities
-        sum_number_manipulations[0] += np.sum(manipulators)
-        sum_number_manipulators[0] += np.count_nonzero(manipulators)
-        sum_percentage_unassigned_students[0] += average_percentage_unassigned_students
+        new_row_boston = {"num_students": [num_students],
+                          "num_schools": [num_schools],
+                          "average_runtime": [time.time() - start_time],
+                          "capacities": [capacities],
+                          "capacities_generated": [capacities_generated],
+                          "num_capacities": [num_capacities],
+                          "num_repeats_profiles": [num_repeats_profiles],
+                          "num_repeat_sampler": [num_repeat_sampler],
+                          "epsilon": [epsilon],
+                          "manipulators_ratio": [manipulators_ratio],
+                          "default_fair_num_student": [round(num_students * (1 - manipulators_ratio))],  # Можно убрать
+                          "num_manipulations": [num_manipulations],
+                          "algorithm": ["boston"],
+                          "k": [k_boston],
+                          "probabilities": [probabilities],
+                          "utilities": [utilities],
+                          "average_utility": [np.sum(utilities) / num_students],
+                          "average_number_manipulations": [np.sum(manipulators)],
+                          "possible_percentage_manipulators": [
+                              (num_students - round(num_students * (1 - manipulators_ratio))) / num_students * 100],
+                          "average_actual_percentage_manipulators": [np.count_nonzero(manipulators) / num_students * 100],
+                          "average_percentage_unassigned_students": [average_percentage_unassigned_students]
+                          }
+
+        boston_df = pd.DataFrame(new_row_boston, index=[0])
+        experiment_results.append(boston_df)
 
         # gs algorithm
         for k_gs in range(1, num_schools + 1):
@@ -138,73 +146,32 @@ def run_experiment(num_students: int,
                 fair_indices=fair_indices,
                 num_manipulations=num_manipulations)
 
-            sum_probabilities[k_gs] += probabilities
-            sum_utilities[k_gs] += utilities
-            sum_number_manipulations[k_gs] += np.sum(manipulators)
-            sum_number_manipulators[k_gs] += np.count_nonzero(manipulators)
-            sum_percentage_unassigned_students[k_gs] += average_percentage_unassigned_students
+            new_row_gs = {"num_students": [num_students],
+                          "num_schools": [num_schools],
+                          "average_runtime": [time.time() - start_time],
+                          "capacities": [capacities],
+                          "capacities_generated": [capacities_generated],
+                          "num_capacities": [num_capacities],
+                          "num_repeats_profiles": [num_repeats_profiles],
+                          "num_repeat_sampler": [num_repeat_sampler],
+                          "epsilon": [epsilon],
+                          "manipulators_ratio": [manipulators_ratio],
+                          "default_fair_num_student": [round(num_students * (1 - manipulators_ratio))],  # Можно убрать
+                          "num_manipulations": [num_manipulations],
+                          "algorithm": ["gs"],
+                          "k": [k_gs],
+                          "probabilities": [probabilities],
+                          "utilities": [utilities],
+                          "average_utility": [np.sum(utilities) / num_students],
+                          "average_number_manipulations": [np.sum(manipulators)],
+                          "possible_percentage_manipulators": [
+                              (num_students - round(num_students * (1 - manipulators_ratio))) / num_students * 100],
+                          "average_actual_percentage_manipulators": [np.count_nonzero(manipulators) / num_students * 100],
+                          "average_percentage_unassigned_students": [average_percentage_unassigned_students]
+                          }
 
-    average_probabilities = sum_probabilities / num_repeats_profiles
-    average_utilities = sum_utilities / num_repeats_profiles
-    average_utility = np.sum(average_utilities, axis=1) / num_students
-    average_number_manipulations = sum_number_manipulations / num_repeats_profiles
-    average_actual_percentage_manipulators = (sum_number_manipulators / num_repeats_profiles) / num_students * 100
-    average_percentage_unassigned_students = sum_percentage_unassigned_students / num_repeats_profiles
-
-    new_row_boston = {"num_students": num_students,
-                      "num_schools": num_schools,
-                      "average_runtime": time.time() - start_time,
-                      "capacities": capacities,
-                      "capacities_generated": capacities_generated,
-                      "num_capacities": num_capacities,
-                      "num_repeats_profiles": num_repeats_profiles,
-                      "num_repeat_sampler": num_repeat_sampler,
-                      "epsilon": epsilon,
-                      "manipulators_ratio": manipulators_ratio,
-                      "default_fair_num_student": round(num_students * (1 - manipulators_ratio)),  # Можно убрать
-                      "num_manipulations": num_manipulations,
-                      "algorithm": "boston",
-                      "k": k_boston,
-                      "probabilities": average_probabilities[0],
-                      "utilities": average_utilities[0],
-                      "average_utility": average_utility[0],
-                      "average_number_manipulations": average_number_manipulations[0],
-                      "possible_percentage_manipulators": (num_students - round(num_students * (1 - manipulators_ratio))) / num_students * 100,
-                      "average_actual_percentage_manipulators": average_actual_percentage_manipulators[0],
-                      "average_percentage_unassigned_students": average_percentage_unassigned_students[0]
-                      }
-
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", category=FutureWarning)
-        experiment_results = pd.concat([experiment_results, pd.DataFrame([new_row_boston])], ignore_index=True)
-
-    for exp_num in range(1, num_schools + 1):
-        new_row_gs = {"num_students": num_students,
-                      "num_schools": num_schools,
-                      "average_runtime": time.time() - start_time,
-                      "capacities": capacities,
-                      "capacities_generated": capacities_generated,
-                      "num_capacities": num_capacities,
-                      "num_repeats_profiles": num_repeats_profiles,
-                      "num_repeat_sampler": num_repeat_sampler,
-                      "epsilon": epsilon,
-                      "manipulators_ratio": manipulators_ratio,
-                      "default_fair_num_student": round(num_students * (1 - manipulators_ratio)),   # Можно убрать
-                      "num_manipulations": num_manipulations,
-                      "algorithm": "gs",
-                      "k": exp_num,
-                      "probabilities": average_probabilities[exp_num],
-                      "utilities": average_utilities[exp_num],
-                      "average_utility": average_utility[exp_num],
-                      "average_number_manipulations": average_number_manipulations[exp_num],
-                      "possible_percentage_manipulators": (num_students - round(num_students * (1 - manipulators_ratio))) / num_students * 100,
-                      "average_actual_percentage_manipulators": average_actual_percentage_manipulators[exp_num],
-                      "average_percentage_unassigned_students": average_percentage_unassigned_students[exp_num]
-                      }
-
-        experiment_results = pd.concat([experiment_results, pd.DataFrame([new_row_gs])], ignore_index=True)
-
-    print(sum_utilities)
+            gs_df = pd.DataFrame(new_row_gs, index=[0])
+            experiment_results.append(gs_df)
 
     return experiment_results
 
@@ -242,11 +209,13 @@ def massive_run(tests: list, display_progress: bool = False):
             params['num_capacities'] = 1
 
             experiment_results = run_experiment(**params)
-            experiment_results.insert(0, 'experiment_number', int(exp_number) + 1)
+            for df in experiment_results:
+                df.insert(0, 'experiment_number', int(exp_number) + 1)
+            experiment_results.append(test_results)
 
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=FutureWarning)
-                test_results = pd.concat([test_results, experiment_results], ignore_index=True)
+                test_results = pd.concat(experiment_results, ignore_index=True)
             # test_results = pd.concat([test_results, experiment_results], ignore_index=True)
 
         else:
@@ -260,12 +229,13 @@ def massive_run(tests: list, display_progress: bool = False):
                 params['capacities'] = capacities
 
                 experiment_results = run_experiment(**params)
-                experiment_results.insert(0, 'experiment_number', int(exp_number) + 1)
+                for df in experiment_results:
+                    df.insert(0, 'experiment_number', int(exp_number) + 1)
+                experiment_results.append(test_results)
 
                 with warnings.catch_warnings():
                     warnings.filterwarnings("ignore", category=FutureWarning)
-                    test_results = pd.concat([test_results, experiment_results], ignore_index=True)
-                # test_results = pd.concat([test_results, experiment_results], ignore_index=True)
+                    test_results = pd.concat(experiment_results, ignore_index=True)
 
     return test_results
 
@@ -310,7 +280,10 @@ if __name__ == '__main__':
              {"num_students": 30, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 4}]
 
     tests = [{"num_students": 3, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 6}]
+              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 6},
+             {"num_students": 6, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.5, "num_manipulations": 6},
+             ]
 
     pd.set_option('display.max_columns', None)
 
@@ -318,10 +291,10 @@ if __name__ == '__main__':
 
     experiment_results = experiment_results[
         ['experiment_number'] + [col for col in experiment_results.columns if col != 'experiment_number']]
-    experiment_results = experiment_results.sort_values(by=['experiment_number', 'algorithm', 'k'])
+    # experiment_results = experiment_results.sort_values(by=['experiment_number', 'k', 'algorithm'])
     experiment_results_grouped = group_test_results(experiment_results)
 
     # print(experiment_results)
 
-    experiment_results.to_csv('./data_out/experiment_results_ex.csv', index=False)
-    experiment_results_grouped.to_csv('./data_out/experiment_results_grouped_ex.csv', index=False)
+    # experiment_results.to_csv('./data_out/new_experiment_results_ex.csv', index=False)
+    experiment_results_grouped.to_csv('./data_out/new_experiment_results_grouped_ex.csv', index=False)

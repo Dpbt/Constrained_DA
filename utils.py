@@ -101,10 +101,11 @@ def generate_statistic(num_schools: int, preferences: np.ndarray, k: int):
 
 def group_test_results(df: pd.DataFrame) -> pd.DataFrame:
     groupby_columns = ["num_students", "num_schools", "num_capacities", "num_repeats_profiles",
-                       "num_repeat_sampler", "epsilon", "num_manipulations", "algorithm", "k"]
+                       "num_repeat_sampler", "epsilon", "manipulators_ratio", "default_fair_num_student",
+                       "num_manipulations", "algorithm", "k", "possible_percentage_manipulators"]
 
-    average_columns = ["average_utility",
-                       "average_percentage_manipulators", "average_percentage_unassigned_students"]
+    average_columns = ["average_utility", "average_runtime", "average_number_manipulations",
+                       "average_actual_percentage_manipulators", "average_percentage_unassigned_students"]
 
     grouped_df = df.groupby(groupby_columns).agg(
         experiment_number=('experiment_number', 'first'),
@@ -114,7 +115,10 @@ def group_test_results(df: pd.DataFrame) -> pd.DataFrame:
     grouped_df = grouped_df[
         ['experiment_number'] + [col for col in grouped_df.columns if col != 'experiment_number']]
 
-    grouped_df = grouped_df.sort_values(by=['experiment_number', "k"])
+    grouped_df = grouped_df.sort_values(
+        by=['experiment_number', "k", "algorithm"],
+        ascending=[True, True, False]
+    )
 
     return grouped_df
 

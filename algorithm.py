@@ -192,7 +192,7 @@ def k_gs_algorithm_prob(num_students: int, num_schools: int, preferences: np.nda
     return probabilities
 
 
-# TODO
+# TODO if needed
 def k_boston_algorithm_prob(num_students: int, num_schools: int, preferences: np.ndarray, capacities: np.ndarray, k: int):
     statistic = generate_statistic(num_schools=num_schools, preferences=preferences, k=k)
     probabilities = np.zeros((num_students, num_schools))
@@ -210,9 +210,16 @@ def k_boston_algorithm_prob(num_students: int, num_schools: int, preferences: np
     return probabilities
 
 
-def manipulation_algorithm(algorithm: str, num_students: int, num_schools: int, profiles: np.ndarray, capacities: np.ndarray,
-                     k: int, epsilon: float, num_manipulations: int
-                     ):
+def manipulation_algorithm(algorithm: str,
+                           num_students: int,
+                           num_schools: int,
+                           profiles: np.ndarray,
+                           capacities: np.ndarray,
+                           k: int,
+                           epsilon: float,
+                           fair_indices: np.ndarray,
+                           num_manipulations: int
+                           ):
     if algorithm == 'gs':
         prob_func = k_gs_algorithm_prob
     elif algorithm == 'boston':
@@ -223,13 +230,23 @@ def manipulation_algorithm(algorithm: str, num_students: int, num_schools: int, 
     preferences = generate_k_restricted_preferences(profiles, k)
     # print(preferences)
     # manipulators = [0 for _ in range(num_students)]
+
     manipulators = np.zeros(num_students)
+    manipulators[fair_indices] = num_manipulations
+    max_num_manipulations = num_manipulations * num_students
+
     last_manipulation = 1
 
-    while np.sum(manipulators) < num_manipulations * num_students:
+    while np.sum(manipulators) < max_num_manipulations:
+        # print("while1", manipulators, last_manipulation)
+        # print("while2", np.sum(manipulators), max_num_manipulations)
         if last_manipulation == 0:
             break
+        else:
+            last_manipulation = 0
+
         students_for_manipulation = [i for i in range(num_students) if manipulators[i] < num_manipulations]
+        # print("list", students_for_manipulation)
 
         curr_probabilities = prob_func(num_students=num_students,
                                        num_schools=num_schools,
@@ -244,13 +261,13 @@ def manipulation_algorithm(algorithm: str, num_students: int, num_schools: int, 
         # Выбор порядка для манипулирования
 
         # или
-        # random.shuffle(students_for_manipulation)
-        # order_for_manipulation = students_for_manipulation
+        random.shuffle(students_for_manipulation)
+        order_for_manipulation = students_for_manipulation
 
         # или
-        sorted_students = np.argsort(np.array(curr_utilities))
-        order_for_manipulation = [student for student in sorted_students if student in students_for_manipulation]
-        last_manipulation = 0
+        # sorted_students = np.argsort(np.array(curr_utilities))
+        # order_for_manipulation = [student for student in sorted_students if student in students_for_manipulation]
+        # last_manipulation = 0
 
         # print("While print")
         # print(preferences)
@@ -311,11 +328,8 @@ def manipulation_algorithm(algorithm: str, num_students: int, num_schools: int, 
     #                                           probabilities=probabilities,
     #                                           profiles=profiles)
 
+    manipulators[fair_indices] = 0
     return preferences, manipulators
-
-
-# улучшить оценку k_gs_algorithm_prob -
-# может как-то учитывать что не все из конкурентов по шагу на него дошли или учитывать как-то тех, кто придет позже
 
 
 if __name__ == '__main__':
