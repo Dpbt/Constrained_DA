@@ -85,11 +85,12 @@ def algorithm_sampler(algorithm: str, num_students: int, num_schools: int, prefe
             statistic[student, num_schools] += 1
 
     probabilities = statistic / num_repeat
-    average_percentage_unassigned_students = (np.sum(statistic[:, num_schools]) / num_repeat) / num_students * 100
+    unassigned_statistic = statistic[:, num_schools] / num_repeat
+    # average_percentage_unassigned_students = (np.sum(statistic[:, num_schools]) / num_repeat) / num_students * 100
 
     # Может добавить усреднение по одинаковым предпочтениям ?
-
-    return probabilities, average_percentage_unassigned_students
+    # return probabilities, average_percentage_unassigned_students
+    return probabilities, unassigned_statistic
 
 
 def k_boston_algorithm(num_students: int, num_schools: int, preferences: np.ndarray, capacities: np.ndarray, k: int
@@ -228,8 +229,6 @@ def manipulation_algorithm(algorithm: str,
         raise ValueError('Algorithm must be either "boston" or "gs"')
 
     preferences = generate_k_restricted_preferences(profiles, k)
-    # print(preferences)
-    # manipulators = [0 for _ in range(num_students)]
 
     manipulators = np.zeros(num_students)
     manipulators[fair_indices] = num_manipulations
@@ -238,15 +237,12 @@ def manipulation_algorithm(algorithm: str,
     last_manipulation = 1
 
     while np.sum(manipulators) < max_num_manipulations:
-        # print("while1", manipulators, last_manipulation)
-        # print("while2", np.sum(manipulators), max_num_manipulations)
         if last_manipulation == 0:
             break
         else:
             last_manipulation = 0
 
         students_for_manipulation = [i for i in range(num_students) if manipulators[i] < num_manipulations]
-        # print("list", students_for_manipulation)
 
         curr_probabilities = prob_func(num_students=num_students,
                                        num_schools=num_schools,
@@ -259,8 +255,6 @@ def manipulation_algorithm(algorithm: str,
                                                        profiles=profiles)
 
         # Выбор порядка для манипулирования
-
-        # или
         random.shuffle(students_for_manipulation)
         order_for_manipulation = students_for_manipulation
 
@@ -269,22 +263,11 @@ def manipulation_algorithm(algorithm: str,
         # order_for_manipulation = [student for student in sorted_students if student in students_for_manipulation]
         # last_manipulation = 0
 
-        # print("While print")
-        # print(preferences)
-        # print(manipulators)
-        # print(students_for_manipulation)
-        # print(curr_probabilities)
-        # print(curr_utilities)
-        # print(sorted_students)
-        # print(order_for_manipulation)
-        # print("End of While print")
-
         for student in order_for_manipulation:
             # print("For print", student)
             best_manipulation = []
             best_manipulation_score = 0
             for new_preference in generate_possible_manipulations(num_schools, preferences[student], k):
-                # print("Possible manipulation", new_preference)  # Сделать функцию
                 new_preferences = preferences.copy()
                 new_preferences[student] = new_preference
 
@@ -298,35 +281,17 @@ def manipulation_algorithm(algorithm: str,
                                                               probabilities=new_probabilities,
                                                               profiles=profiles)
 
-                # print(new_probabilities)
-                # print(new_utilities)
-                # print("manipulation_score:", new_utilities[student] - curr_utilities[student])
                 manipulation_score = new_utilities[student] - curr_utilities[student]
 
                 if manipulation_score > best_manipulation_score and manipulation_score > epsilon:
-                    # print("Upd on best_manipulation", new_preference, manipulation_score)
                     best_manipulation = new_preference
                     best_manipulation_score = manipulation_score
 
-            # print(preferences)
-
             if best_manipulation_score > 0:
-                # print("Best_manipulation_found", student, best_manipulation, best_manipulation_score)
                 manipulators[student] += 1
                 last_manipulation = 1
                 preferences[student] = best_manipulation
                 break
-
-    # probabilities = prob_func(num_students=num_students,
-    #                                     num_schools=num_schools,
-    #                                     preferences=preferences,
-    #                                     capacities=capacities,
-    #                                     k=k)
-    #
-    # utilities = calculate_utilities_from_prob(num_students=num_students,
-    #                                           num_schools=num_schools,
-    #                                           probabilities=probabilities,
-    #                                           profiles=profiles)
 
     manipulators[fair_indices] = 0
     return preferences, manipulators

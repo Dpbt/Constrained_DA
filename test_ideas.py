@@ -34,4 +34,26 @@ def generate_possible_manipulations(num_schools: int, preferences: np.ndarray, k
 
 if __name__ == '__main__':
     preferences = np.array([0, 1])
-    print(generate_possible_manipulations(num_schools=3, preferences=preferences, k=2))
+    # print(generate_possible_manipulations(num_schools=3, preferences=preferences, k=2))
+
+
+    data = {
+        "Column A": 1,
+        "Column B": 4,
+        "Column C": 7
+    }
+
+    df = pd.DataFrame(data, index=[0])
+    df2 = pd.DataFrame(data, index=[0])
+
+    experiment_results = pd.concat([df, df2], ignore_index=True)
+
+    # print(experiment_results)
+    utilities = np.array([10, 20, 30, 40])
+    mask = np.zeros(4, dtype=bool)
+    mask[np.array([1, 3])] = True
+
+    # Получаем массив элементов, не входящих в маску
+    result = utilities[mask]
+    result = utilities[~np.array([1, 3])]
+    print(result)

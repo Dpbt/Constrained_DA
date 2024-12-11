@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from numba import njit, jit
 
-
 # откуда фиксируется seed ?
 
 
@@ -99,13 +98,78 @@ def generate_statistic(num_schools: int, preferences: np.ndarray, k: int):
     return statistic
 
 
+def generate_unassigned_statistic(num_students: int,
+                                  fair_indices: np.ndarray,
+                                  unassigned_statistic: np.ndarray,
+                                  utilities: np.ndarray):
+    fair_mask = np.zeros(num_students, dtype=bool)
+    fair_mask[fair_indices] = True
+
+    fair_utilities = utilities[fair_mask]
+    manipulator_utilities = utilities[~fair_mask]
+    unassigned_fair_statistic = unassigned_statistic[fair_mask]
+    unassigned_manipulator_statistic = unassigned_statistic[~fair_mask]
+
+    average_percentage_unassigned_students = (np.sum(unassigned_statistic)) / num_students * 100
+    average_percentage_unassigned_fair_students = (np.sum(unassigned_fair_statistic)) / len(fair_indices) * 100
+    average_percentage_unassigned_manipulator_students = ((np.sum(unassigned_manipulator_statistic)) /
+                                                          (num_students - len(fair_indices)) * 100)
+    average_utility_fair_students = (np.sum(fair_utilities)) / len(fair_indices)
+    average_utility_manipulator_students = (np.sum(manipulator_utilities)) / (num_students - len(fair_indices))
+
+    return (average_percentage_unassigned_students,
+            average_percentage_unassigned_fair_students,
+            average_percentage_unassigned_manipulator_students,
+            average_utility_fair_students,
+            average_utility_manipulator_students)
+
+
+import numpy as np
+
+
+def generate_unassigned_statistic(num_students: int,
+                                  fair_indices: np.ndarray,
+                                  unassigned_statistic: np.ndarray,
+                                  utilities: np.ndarray):
+    fair_mask = np.zeros(num_students, dtype=bool)
+    fair_mask[fair_indices] = True
+
+    fair_utilities = utilities[fair_mask]
+    manipulator_utilities = utilities[~fair_mask]
+    unassigned_fair_statistic = unassigned_statistic[fair_mask]
+    unassigned_manipulator_statistic = unassigned_statistic[~fair_mask]
+
+    num_fair_students = len(fair_indices)
+    num_manipulator_students = num_students - num_fair_students
+
+    average_percentage_unassigned_students = (
+                np.sum(unassigned_statistic) / num_students * 100) if num_students > 0 else 0
+
+    average_percentage_unassigned_fair_students = (
+                np.mean(unassigned_fair_statistic)  * 100) if num_fair_students > 0 else 0
+
+    average_percentage_unassigned_manipulator_students = (np.mean(
+        unassigned_manipulator_statistic) * 100) if num_manipulator_students > 0 else 0
+
+    average_utility_fair_students = np.mean(fair_utilities) if num_fair_students > 0 else 0
+    average_utility_manipulator_students = np.mean(manipulator_utilities) if num_manipulator_students > 0 else 0
+
+    return (average_percentage_unassigned_students,
+            average_percentage_unassigned_fair_students,
+            average_percentage_unassigned_manipulator_students,
+            average_utility_fair_students,
+            average_utility_manipulator_students)
+
+
 def group_test_results(df: pd.DataFrame) -> pd.DataFrame:
-    groupby_columns = ["num_students", "num_schools", "num_capacities", "num_repeats_profiles",
+    groupby_columns = ["num_students", "num_schools", "capacities_generated", "num_capacities", "num_repeats_profiles",
                        "num_repeat_sampler", "epsilon", "manipulators_ratio", "default_fair_num_student",
                        "num_manipulations", "algorithm", "k", "possible_percentage_manipulators"]
 
-    average_columns = ["average_utility", "average_runtime", "average_number_manipulations",
-                       "average_actual_percentage_manipulators", "average_percentage_unassigned_students"]
+    average_columns = ["average_runtime", "average_utility", "average_utility_fair_students",
+                       "average_utility_manipulator_students", "average_actual_percentage_manipulators",
+                       "average_number_manipulations", "average_percentage_unassigned_students",
+                       "average_percentage_unassigned_fair_students", "average_percentage_unassigned_manipulator_students"]
 
     grouped_df = df.groupby(groupby_columns).agg(
         experiment_number=('experiment_number', 'first'),
@@ -125,9 +189,6 @@ def group_test_results(df: pd.DataFrame) -> pd.DataFrame:
 
 if __name__ == '__main__':
     x = generate_random_profiles(10, 5)
-    # print(x)
-    #
-    # print(generate_k_restricted_preferences(x, 4))
 
     # num_schools = 5
     # preferences = np.array([1, 2, 4])
@@ -141,12 +202,29 @@ if __name__ == '__main__':
     #                      [0.47070475, 0.39570134, 0.13359391]])
     # print(calculate_utilities_from_prob(3, 3, prob, profiles))
 
-    df = pd.read_csv('experiment_results.csv')
+    # df = pd.read_csv('experiment_results.csv')
+    #
+    # grouped_results = group_test_results(df)
+    # print(grouped_results)
+    #
+    # grouped_results.to_csv('experiment_results_grouped.csv', index=False)
 
-    grouped_results = group_test_results(df)
-    print(grouped_results)
+    utilities = np.array([10, 20, 30, 40, 50])
 
-    grouped_results.to_csv('experiment_results_grouped.csv', index=False)
+    (average_percentage_unassigned_students,
+     average_percentage_unassigned_fair_students,
+     average_percentage_unassigned_manipulator_students,
+     average_utility_fair_students,
+     average_utility_manipulator_students) = generate_unassigned_statistic(num_students = 5,
+                                      fair_indices = np.array([1 ,2]),
+                                      unassigned_statistic = np.array([0.1, 0.2, 0.3, 0.4, 0.5]),
+                                      utilities = utilities)
+
+    print(average_percentage_unassigned_students,
+     average_percentage_unassigned_fair_students,
+     average_percentage_unassigned_manipulator_students,
+     average_utility_fair_students,
+     average_utility_manipulator_students)
 
 
 

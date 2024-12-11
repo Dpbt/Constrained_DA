@@ -8,7 +8,7 @@ import warnings
 import random
 
 from utils import (generate_random_profiles, generate_school_capacities, generate_k_restricted_preferences,
-                   calculate_utility, calculate_utilities_from_prob, group_test_results)
+                   calculate_utility, calculate_utilities_from_prob, generate_unassigned_statistic, group_test_results)
 from algorithm import k_boston_algorithm, k_gs_algorithm, manipulation_algorithm, algorithm_sampler
 
 
@@ -48,7 +48,7 @@ def run_experiment_k(algorithm: str,
     else:
         raise ValueError('Algorithm must be either "boston" or "gs"')
 
-    probabilities, average_percentage_unassigned_students = algorithm_sampler(algorithm=algorithm,
+    probabilities, unassigned_statistic = algorithm_sampler(algorithm=algorithm,
                                                                               num_students=num_students,
                                                                               num_schools=num_schools,
                                                                               preferences=preferences,
@@ -61,7 +61,7 @@ def run_experiment_k(algorithm: str,
                                               probabilities=probabilities,
                                               profiles=profiles)
 
-    return probabilities, utilities, manipulators, average_percentage_unassigned_students
+    return probabilities, utilities, manipulators, unassigned_statistic
 
 
 def run_experiment(num_students: int,
@@ -93,7 +93,7 @@ def run_experiment(num_students: int,
         # Если доделать boston для k < num_schools, то добавить цикл для boston (и поменять ужас сколько индексов),
         # а внутри run_experiment_k переделать отработку boston
         # boston algorithm
-        probabilities, utilities, manipulators, average_percentage_unassigned_students = run_experiment_k(
+        probabilities, utilities, manipulators, unassigned_statistic = run_experiment_k(
             algorithm="boston",
             num_students=num_students,
             num_schools=num_schools,
@@ -104,6 +104,15 @@ def run_experiment(num_students: int,
             epsilon=epsilon,
             fair_indices=fair_indices,
             num_manipulations=num_manipulations)
+
+        (average_percentage_unassigned_students,
+         average_percentage_unassigned_fair_students,
+         average_percentage_unassigned_manipulator_students,
+         average_utility_fair_students,
+         average_utility_manipulator_students) = generate_unassigned_statistic(num_students=num_students,
+                                                                               fair_indices=fair_indices,
+                                                                               unassigned_statistic=unassigned_statistic,
+                                                                               utilities=utilities)
 
         new_row_boston = {"num_students": [num_students],
                           "num_schools": [num_schools],
@@ -126,7 +135,11 @@ def run_experiment(num_students: int,
                           "possible_percentage_manipulators": [
                               (num_students - round(num_students * (1 - manipulators_ratio))) / num_students * 100],
                           "average_actual_percentage_manipulators": [np.count_nonzero(manipulators) / num_students * 100],
-                          "average_percentage_unassigned_students": [average_percentage_unassigned_students]
+                          "average_percentage_unassigned_students": [average_percentage_unassigned_students],
+                          "average_percentage_unassigned_fair_students": [average_percentage_unassigned_fair_students],
+                          "average_percentage_unassigned_manipulator_students": [average_percentage_unassigned_manipulator_students],
+                          "average_utility_fair_students": [average_utility_fair_students],
+                          "average_utility_manipulator_students": [average_utility_manipulator_students]
                           }
 
         boston_df = pd.DataFrame(new_row_boston, index=[0])
@@ -134,7 +147,7 @@ def run_experiment(num_students: int,
 
         # gs algorithm
         for k_gs in range(1, num_schools + 1):
-            probabilities, utilities, manipulators, average_percentage_unassigned_students = run_experiment_k(
+            probabilities, utilities, manipulators, unassigned_statistic = run_experiment_k(
                 algorithm="gs",
                 num_students=num_students,
                 num_schools=num_schools,
@@ -145,6 +158,15 @@ def run_experiment(num_students: int,
                 epsilon=epsilon,
                 fair_indices=fair_indices,
                 num_manipulations=num_manipulations)
+
+            (average_percentage_unassigned_students,
+             average_percentage_unassigned_fair_students,
+             average_percentage_unassigned_manipulator_students,
+             average_utility_fair_students,
+             average_utility_manipulator_students) = generate_unassigned_statistic(num_students=num_students,
+                                                                                   fair_indices=fair_indices,
+                                                                                   unassigned_statistic=unassigned_statistic,
+                                                                                   utilities=utilities)
 
             new_row_gs = {"num_students": [num_students],
                           "num_schools": [num_schools],
@@ -167,7 +189,11 @@ def run_experiment(num_students: int,
                           "possible_percentage_manipulators": [
                               (num_students - round(num_students * (1 - manipulators_ratio))) / num_students * 100],
                           "average_actual_percentage_manipulators": [np.count_nonzero(manipulators) / num_students * 100],
-                          "average_percentage_unassigned_students": [average_percentage_unassigned_students]
+                          "average_percentage_unassigned_students": [average_percentage_unassigned_students],
+                          "average_percentage_unassigned_fair_students": [average_percentage_unassigned_fair_students],
+                          "average_percentage_unassigned_manipulator_students": [average_percentage_unassigned_manipulator_students],
+                          "average_utility_fair_students": [average_utility_fair_students],
+                          "average_utility_manipulator_students": [average_utility_manipulator_students]
                           }
 
             gs_df = pd.DataFrame(new_row_gs, index=[0])
@@ -182,9 +208,15 @@ def massive_run(tests: list, display_progress: bool = False):
 
     test_results = pd.DataFrame(columns=["num_students", "num_schools", "average_runtime", "capacities", "capacities_generated",
                                          "num_capacities", "num_repeats_profiles",
-                                         "num_repeat_sampler", "epsilon", "manipulators_ratio", "num_manipulations",
+                                         "num_repeat_sampler", "epsilon", "manipulators_ratio", "default_fair_num_student",
+                                         "num_manipulations",
                                          "algorithm", "k", "probabilities", "utilities", "average_utility",
-                                         "average_actual_percentage_manipulators", "average_percentage_unassigned_students"])
+                                         "average_utility_fair_students", "average_utility_manipulator_students",
+                                         "possible_percentage_manipulators", "average_actual_percentage_manipulators",
+                                         "average_number_manipulations",
+                                         "average_percentage_unassigned_students", "average_percentage_unassigned_fair_students",
+                                         "average_percentage_unassigned_manipulator_students",
+                                         ])
 
     if display_progress:
         iterator = tqdm(tests, desc="Выполнение тестов")
@@ -268,22 +300,52 @@ if __name__ == '__main__':
     num_manipulations = 5
 
     # tests = [{"num_students": 20, "num_schools": 8, "capacities": np.array([8, 4, 3, 1, 1, 1, 1, 1]), "num_capacities": 3, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5}]
-    tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 6},
-             {"num_students": 10, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
-             {"num_students": 15, "num_schools": 6, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
-             {"num_students": 10, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
-             {"num_students": 30, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
-             {"num_students": 18, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
-             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
-             {"num_students": 20, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 7},
-             {"num_students": 15, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 3},
-             {"num_students": 30, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10, "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 4}]
-
-    tests = [{"num_students": 3, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
+    tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
               "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 6},
-             {"num_students": 6, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.5, "num_manipulations": 6},
-             ]
+             {"num_students": 10, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
+             {"num_students": 15, "num_schools": 6, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
+             {"num_students": 10, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
+             {"num_students": 30, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
+             {"num_students": 18, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
+             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
+             {"num_students": 20, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 7},
+             {"num_students": 15, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 3},
+             {"num_students": 30, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 4}]
+
+    tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 6},
+             {"num_students": 10, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
+             {"num_students": 15, "num_schools": 6, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
+             {"num_students": 10, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
+             {"num_students": 30, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
+             {"num_students": 18, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
+             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
+             {"num_students": 20, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 7},
+             {"num_students": 15, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 3},
+             {"num_students": 30, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 4}]
+    # tests = [{"num_students": 3, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
+    #           "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 6},
+    #          {"num_students": 6, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
+    #           "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.5, "num_manipulations": 6},
+    #          ]
 
     pd.set_option('display.max_columns', None)
 
@@ -297,4 +359,4 @@ if __name__ == '__main__':
     # print(experiment_results)
 
     # experiment_results.to_csv('./data_out/new_experiment_results_ex.csv', index=False)
-    experiment_results_grouped.to_csv('./data_out/new_experiment_results_grouped_ex.csv', index=False)
+    experiment_results_grouped.to_csv('./data_out/new_experiment_results_grouped_ex_1.csv', index=False)
