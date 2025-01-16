@@ -1,4 +1,3 @@
-# from numpy import ndarray
 import time
 import numpy as np
 import pandas as pd
@@ -10,6 +9,7 @@ import random
 from utils import (generate_random_profiles, generate_school_capacities, generate_k_restricted_preferences,
                    calculate_utility, calculate_utilities_from_prob, generate_unassigned_statistic, group_test_results)
 from algorithm import k_boston_algorithm, k_gs_algorithm, manipulation_algorithm, algorithm_sampler
+from data_analysis import get_n_best_results
 
 
 # Допилить отдельные полезности для манипуляторов / честных игроков, мб отдельную статистику по unassigned_students для них
@@ -28,12 +28,14 @@ def run_experiment_k(algorithm: str,
     # На данный момент считается, что boston только для k = num_schools
     # Иначе, возможно, надо будет другую схему манипуляций для boston
 
-    if algorithm == 'boston':
-        k = num_schools
+    # if algorithm == 'boston':
+    #     k = num_schools
 
     if algorithm == 'boston':
+        k = num_schools
         preferences = generate_k_restricted_preferences(profiles, k)
         manipulators = [0 for _ in range(num_students)]
+
     elif algorithm == 'gs':
         # Возможно, тут надо еще и это много раз повторять, если внутри manipulation_algorithm есть случайный выбор манипуляции/человека
         preferences, manipulators = manipulation_algorithm(algorithm=algorithm,
@@ -341,15 +343,90 @@ if __name__ == '__main__':
               "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 3},
              {"num_students": 30, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
               "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 4}]
-    # tests = [{"num_students": 3, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
-    #           "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 6},
-    #          {"num_students": 6, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
-    #           "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.5, "num_manipulations": 6},
-    #          ]
+
+    tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 5,
+              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 6},
+             {"num_students": 10, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 5,
+              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 5},
+             {"num_students": 15, "num_schools": 6, "num_capacities": 5, "num_repeats_profiles": 5,
+              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 5},
+             {"num_students": 10, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 5,
+              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 5},
+             {"num_students": 30, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 5,
+              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 5},
+             {"num_students": 18, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 5,
+              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 5},
+             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 5,
+              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 5},
+             {"num_students": 20, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 5,
+              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 7},
+             {"num_students": 15, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 5,
+              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 3},
+             {"num_students": 30, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 5,
+              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 4},
+             {"num_students": 24, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 5,
+              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 3},
+             {"num_students": 18, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 5,
+              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 2},
+             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 5,
+              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 3},
+             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 5,
+              "num_repeat_sampler": 50, "epsilon": 0.005, "num_manipulations": 3}
+             ]
+
+    tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 6},
+             {"num_students": 10, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 10},
+             {"num_students": 15, "num_schools": 6, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 5},
+             {"num_students": 10, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 5},
+             {"num_students": 30, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 5},
+             {"num_students": 18, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 5},
+             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 5},
+             {"num_students": 20, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 7},
+             {"num_students": 15, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 3},
+             {"num_students": 30, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 4},
+             {"num_students": 24, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 3},
+             {"num_students": 18, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 2},
+             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 3},
+             {"num_students": 40, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 3},
+             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.005, "num_manipulations": 3},
+             {"num_students": 40, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.005, "num_manipulations": 3},
+             {"num_students": 50, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.005, "num_manipulations": 3},
+             {"num_students": 30, "num_schools": 8, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.005, "num_manipulations": 5},
+             {"num_students": 10, "num_schools": 2, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.005, "num_manipulations": 1},
+             {"num_students": 26, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.005, "num_manipulations": 3},
+             {"num_students": 28, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 3},
+             {"num_students": 30, "num_schools": 6, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 3},
+             {"num_students": 32, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 3},
+             {"num_students": 18, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
+              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 3},
+             ]
 
     pd.set_option('display.max_columns', None)
 
-    experiment_results = parallel_run(tests, batch_size=1, n_jobs=-3, display_progress=False)
+    experiment_results = parallel_run(tests, batch_size=1, n_jobs=-2, display_progress=False)
 
     experiment_results = experiment_results[
         ['experiment_number'] + [col for col in experiment_results.columns if col != 'experiment_number']]
@@ -359,4 +436,6 @@ if __name__ == '__main__':
     # print(experiment_results)
 
     # experiment_results.to_csv('./data_out/new_experiment_results_ex.csv', index=False)
-    experiment_results_grouped.to_csv('./data_out/new_experiment_results_grouped_ex_1.csv', index=False)
+    file_path = './data_out/new_experiment_results_grouped_ex_k_3.csv'
+    experiment_results_grouped.to_csv(path_or_buf=file_path, index=False)
+    print(get_n_best_results(file_path=file_path, n=2))

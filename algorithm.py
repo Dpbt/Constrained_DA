@@ -141,6 +141,7 @@ def k_gs_algorithm(num_students: int, num_schools: int, preferences: np.ndarray,
         for school in range(num_schools):
             current_applicants = []
             for student in unassigned_students:
+                # print(preferences, curr_student_school, student, curr_student_school[student] - 1, k)
                 if curr_student_school[student] <= k and preferences[student][curr_student_school[student] - 1] == school:
                     current_applicants.append(student)
 
@@ -190,6 +191,50 @@ def k_gs_algorithm_prob(num_students: int, num_schools: int, preferences: np.nda
                 curr_competitors = 0
             probabilities[student][curr_school] = min(capacities[curr_school] / (statistic[curr_preference, curr_school] + curr_competitors), 1)
 
+    return probabilities
+
+
+def k_gs_algorithm_prob_2(num_students: int, num_schools: int, preferences: np.ndarray, capacities: np.ndarray, k: int):
+    # Оценка вероятности быть назначенным в каждую школу для каждого ученика при алгоритме k_gs
+    statistic = generate_statistic(num_schools=num_schools, preferences=preferences, k=k)
+    # print(statistic)
+    probabilities = np.zeros((num_students, num_schools))
+
+    for student in range(num_students):
+        for curr_preference in range(k):
+            curr_school = preferences[student, curr_preference]
+            curr_prob = 1 - np.sum(probabilities[student, :curr_school])
+
+            num_competitors = 0
+
+            for curr_step in range(k):
+                avg_capacities = (np.sum(capacities[:curr_school]) / curr_school) * curr_step if curr_school > 0 else 0
+                # print("avg:", np.sum(capacities[:curr_school]), curr_school, curr_step)
+                prev_competitors = np.sum(statistic[:curr_step, :curr_school])
+                if prev_competitors > 0:
+                    prob_assigned = avg_capacities / np.sum(statistic[:curr_step, :curr_school])
+                else:
+                    prob_assigned = 0
+                prob_unassigned = 1 - prob_assigned
+                # print("otl:", curr_step, prob_assigned, prob_unassigned, avg_capacities, np.sum(statistic[:curr_step, :curr_school]), statistic[curr_step, curr_school])
+                num_competitors += prob_unassigned * statistic[curr_step, curr_school]
+
+            # print("fin:", student, curr_school, curr_preference, curr_prob, num_competitors, curr_prob * capacities[curr_school] / num_competitors)
+
+                # num_competitors += (((np.sum(capacities[:curr_school]) / curr_school) * (i - 1)) /
+                #            (np.sum(statistic[:i, :curr_school]))) * statistic[curr_preference, curr_school]
+
+            # prob = min(capacities[curr_school] / compet, 1)
+
+            # if curr_preference > 0:
+            #     # print(student, pref, curr_school)
+            #     curr_competitors = min(capacities[curr_school], np.sum(statistic[:curr_preference, curr_school]))
+            # else:
+            #     curr_competitors = 0
+            probabilities[student][curr_school] = curr_prob * capacities[curr_school] / num_competitors
+
+    # print(probabilities)
+    # print(np.sum(probabilities, axis=1))
     return probabilities
 
 
@@ -315,44 +360,63 @@ if __name__ == '__main__':
     #
     # print(probabilities)
 
-    num_students = 3
-    num_schools = 3
-    k = 2
+    num_students = 10
+    num_schools = 5
+    k = 4
     profiles = generate_random_profiles(num_students=num_students, num_schools=num_schools)
     print("profiles", profiles, sep='\n')
     capacities = generate_school_capacities(num_students=num_students, num_schools=num_schools)
     print("capacities", capacities, sep='\n')
+    preferences = generate_k_restricted_preferences(profiles, k)
+    # print("preferences", preferences, sep='\n')
 
+    preferences[0] = np.array([1, 2, 3, 4])
+    preferences[1] = np.array([1, 2, 3, 4])
+    preferences[2] = np.array([0, 2, 3, 4])
+    preferences[3] = np.array([0, 1, 3, 4])
+    # print("preferences", preferences, sep='\n')
 
+    p1 = k_gs_algorithm_prob_2(num_students = num_students, num_schools = num_schools, preferences = preferences,
+                          capacities = capacities, k = k)
+    print(p1)
 
-    preferences, manipulators = manipulation_algorithm(algorithm="gs",
-                                                       num_students=num_students,
-                                                       num_schools=num_schools,
-                                                       profiles=profiles,
-                                                       capacities=capacities,
-                                                       k=k,
-                                                       epsilon=0.1,
-                                                       num_manipulations=1)
+    p2 = k_gs_algorithm_prob(num_students=num_students, num_schools=num_schools, preferences=preferences,
+                          capacities=capacities, k=k)
+    print(p2)
 
-    print("preferences", preferences, sep='\n')
-    print("manipulators", manipulators, sep='\n')
-
-    probabilities, average_percentage_unassigned_students = algorithm_sampler(algorithm='gs',
-                                                                              num_students=num_students,
-                                                                              num_schools=num_schools,
-                                                                              preferences=preferences,
-                                                                              capacities=capacities,
-                                                                              k=k,
-                                                                              num_repeat=1000
-                                                                              )
-
-    print("true probabilities", probabilities, sep='\n')
-
-    utilities = calculate_utilities_from_prob(num_students=num_students,
-                                              num_schools=num_schools,
-                                              probabilities=probabilities,
-                                              profiles=profiles)
-
-    print("true utilities", utilities, sep='\n')
+    # manipulators_ratio = 1
+    # num_fair = round(num_students * (1 - manipulators_ratio))
+    # fair_indices = np.random.choice(num_students, num_fair, replace=False)
+    #
+    # preferences, manipulators = manipulation_algorithm(algorithm="gs",
+    #                                                    num_students=num_students,
+    #                                                    num_schools=num_schools,
+    #                                                    profiles=profiles,
+    #                                                    capacities=capacities,
+    #                                                    k=k,
+    #                                                    epsilon=0.01,
+    #                                                    fair_indices=fair_indices,
+    #                                                    num_manipulations=3)
+    #
+    # print("preferences", preferences, sep='\n')
+    # print("manipulators", manipulators, sep='\n')
+    #
+    # probabilities, average_percentage_unassigned_students = algorithm_sampler(algorithm='gs',
+    #                                                                           num_students=num_students,
+    #                                                                           num_schools=num_schools,
+    #                                                                           preferences=preferences,
+    #                                                                           capacities=capacities,
+    #                                                                           k=k,
+    #                                                                           num_repeat=1000
+    #                                                                           )
+    #
+    # print("true probabilities", probabilities, sep='\n')
+    #
+    # utilities = calculate_utilities_from_prob(num_students=num_students,
+    #                                           num_schools=num_schools,
+    #                                           probabilities=probabilities,
+    #                                           profiles=profiles)
+    #
+    # print("true utilities", utilities, sep='\n')
 
 

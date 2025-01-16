@@ -98,33 +98,33 @@ def generate_statistic(num_schools: int, preferences: np.ndarray, k: int):
     return statistic
 
 
-def generate_unassigned_statistic(num_students: int,
-                                  fair_indices: np.ndarray,
-                                  unassigned_statistic: np.ndarray,
-                                  utilities: np.ndarray):
-    fair_mask = np.zeros(num_students, dtype=bool)
-    fair_mask[fair_indices] = True
-
-    fair_utilities = utilities[fair_mask]
-    manipulator_utilities = utilities[~fair_mask]
-    unassigned_fair_statistic = unassigned_statistic[fair_mask]
-    unassigned_manipulator_statistic = unassigned_statistic[~fair_mask]
-
-    average_percentage_unassigned_students = (np.sum(unassigned_statistic)) / num_students * 100
-    average_percentage_unassigned_fair_students = (np.sum(unassigned_fair_statistic)) / len(fair_indices) * 100
-    average_percentage_unassigned_manipulator_students = ((np.sum(unassigned_manipulator_statistic)) /
-                                                          (num_students - len(fair_indices)) * 100)
-    average_utility_fair_students = (np.sum(fair_utilities)) / len(fair_indices)
-    average_utility_manipulator_students = (np.sum(manipulator_utilities)) / (num_students - len(fair_indices))
-
-    return (average_percentage_unassigned_students,
-            average_percentage_unassigned_fair_students,
-            average_percentage_unassigned_manipulator_students,
-            average_utility_fair_students,
-            average_utility_manipulator_students)
-
-
-import numpy as np
+# def generate_unassigned_statistic(num_students: int,
+#                                   fair_indices: np.ndarray,
+#                                   unassigned_statistic: np.ndarray,
+#                                   utilities: np.ndarray):
+#     fair_mask = np.zeros(num_students, dtype=bool)
+#     fair_mask[fair_indices] = True
+#
+#     fair_utilities = utilities[fair_mask]
+#     manipulator_utilities = utilities[~fair_mask]
+#     unassigned_fair_statistic = unassigned_statistic[fair_mask]
+#     unassigned_manipulator_statistic = unassigned_statistic[~fair_mask]
+#
+#     average_percentage_unassigned_students = (np.sum(unassigned_statistic)) / num_students * 100
+#     average_percentage_unassigned_fair_students = (np.sum(unassigned_fair_statistic)) / len(fair_indices) * 100
+#     average_percentage_unassigned_manipulator_students = ((np.sum(unassigned_manipulator_statistic)) /
+#                                                           (num_students - len(fair_indices)) * 100)
+#     average_utility_fair_students = (np.sum(fair_utilities)) / len(fair_indices)
+#     average_utility_manipulator_students = (np.sum(manipulator_utilities)) / (num_students - len(fair_indices))
+#
+#     return (average_percentage_unassigned_students,
+#             average_percentage_unassigned_fair_students,
+#             average_percentage_unassigned_manipulator_students,
+#             average_utility_fair_students,
+#             average_utility_manipulator_students)
+#
+#
+# import numpy as np
 
 
 def generate_unassigned_statistic(num_students: int,
