@@ -7,7 +7,8 @@ import warnings
 import random
 
 from utils import (generate_random_profiles, generate_school_capacities, generate_k_restricted_preferences,
-                   calculate_utility, calculate_utilities_from_prob, generate_unassigned_statistic, group_test_results)
+                   calculate_utility, calculate_utilities_from_prob, generate_unassigned_statistic,
+                   group_test_results, generate_tests_from_lists)
 from algorithm import k_boston_algorithm, k_gs_algorithm, manipulation_algorithm, algorithm_sampler
 from data_analysis import get_n_best_results
 
@@ -292,15 +293,6 @@ def parallel_run(tests: list, batch_size: int = 1, n_jobs: int = 1, display_prog
 
 if __name__ == '__main__':
 
-    num_students = 20
-    num_schools = 8
-    profiles = generate_random_profiles(num_students=num_students, num_schools=num_schools)
-    capacities = generate_school_capacities(num_students=num_students, num_schools=num_schools)
-    num_repeat_sampler = 100
-    k = 2
-    epsilon = 0.1
-    num_manipulations = 5
-
     # tests = [{"num_students": 20, "num_schools": 8, "capacities": np.array([8, 4, 3, 1, 1, 1, 1, 1]), "num_capacities": 3, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5}]
     tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
               "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 6},
@@ -322,27 +314,6 @@ if __name__ == '__main__':
               "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 3},
              {"num_students": 30, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
               "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 4}]
-
-    tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 6},
-             {"num_students": 10, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
-             {"num_students": 15, "num_schools": 6, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
-             {"num_students": 10, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
-             {"num_students": 30, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
-             {"num_students": 18, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
-             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5},
-             {"num_students": 20, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 7},
-             {"num_students": 15, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 3},
-             {"num_students": 30, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 4}]
 
     tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 5,
               "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 6},
@@ -423,6 +394,21 @@ if __name__ == '__main__':
              {"num_students": 18, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
               "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 3},
              ]
+    tests_lists = {
+        "num_students": [10, 15, 20, 25, 30, 40, 50, 75, 100],
+        "num_schools": [2, 3, 4, 5, 6, 7, 8, 9, 10],
+        "num_capacities": [10],
+        "num_repeats_profiles": [10],
+        "num_repeat_sampler": [100],
+        "epsilon": [0.002, 0.005, 0.01, 0.02],
+        "manipulators_ratio": [0.25, 0.5, 0.75, 1],
+        "num_manipulations": [0.25, 0.5, 0.75, 1],
+    }
+
+    tests = generate_tests_from_lists(**tests_lists)
+
+    print(len(tests))
+    # print(tests)
 
     pd.set_option('display.max_columns', None)
 
@@ -430,12 +416,8 @@ if __name__ == '__main__':
 
     experiment_results = experiment_results[
         ['experiment_number'] + [col for col in experiment_results.columns if col != 'experiment_number']]
-    # experiment_results = experiment_results.sort_values(by=['experiment_number', 'k', 'algorithm'])
     experiment_results_grouped = group_test_results(experiment_results)
 
-    # print(experiment_results)
-
-    # experiment_results.to_csv('./data_out/new_experiment_results_ex.csv', index=False)
     file_path = './data_out/new_experiment_results_grouped_ex_k_3.csv'
     experiment_results_grouped.to_csv(path_or_buf=file_path, index=False)
     print(get_n_best_results(file_path=file_path, n=2))
