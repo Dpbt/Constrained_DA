@@ -10,6 +10,7 @@ from utils import (generate_random_profiles, generate_school_capacities, generat
                    calculate_utility, calculate_utilities_from_prob, generate_unassigned_statistic,
                    group_test_results, generate_tests_from_lists)
 from algorithm import k_boston_algorithm, k_gs_algorithm, manipulation_algorithm, algorithm_sampler
+from algorithm_2 import manipulation_algorithm_2
 from data_analysis import get_n_best_results
 
 
@@ -39,7 +40,7 @@ def run_experiment_k(algorithm: str,
 
     elif algorithm == 'gs':
         # Возможно, тут надо еще и это много раз повторять, если внутри manipulation_algorithm есть случайный выбор манипуляции/человека
-        preferences, manipulators = manipulation_algorithm(algorithm=algorithm,
+        preferences, manipulators = manipulation_algorithm_2(algorithm=algorithm,
                                                            num_students=num_students,
                                                            num_schools=num_schools,
                                                            profiles=profiles,
@@ -394,20 +395,20 @@ if __name__ == '__main__':
              {"num_students": 18, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
               "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 3},
              ]
-    tests_lists = {
-        "num_students": [10, 15, 20, 25, 30, 40, 50, 75, 100],
-        "num_schools": [2, 3, 4, 5, 6, 7, 8, 9, 10],
-        "num_capacities": [10],
-        "num_repeats_profiles": [10],
-        "num_repeat_sampler": [100],
-        "epsilon": [0.002, 0.005, 0.01, 0.02],
-        "manipulators_ratio": [0.25, 0.5, 0.75, 1],
-        "num_manipulations": [0.25, 0.5, 0.75, 1],
-    }
+    # tests_lists = {
+    #     "num_students": [10, 15, 20, 25, 30, 40, 50, 75, 100],
+    #     "num_schools": [2, 3, 4, 5, 6, 7, 8, 9, 10],
+    #     "num_capacities": [10],
+    #     "num_repeats_profiles": [10],
+    #     "num_repeat_sampler": [100],
+    #     "epsilon": [0.002, 0.005, 0.01, 0.02],
+    #     "manipulators_ratio": [0.25, 0.5, 0.75, 1],
+    #     "num_manipulations": [0.25, 0.5, 0.75, 1],
+    # }
+    #
+    # tests = generate_tests_from_lists(**tests_lists)
 
-    tests = generate_tests_from_lists(**tests_lists)
-
-    print(len(tests))
+    # print(len(tests))
     # print(tests)
 
     pd.set_option('display.max_columns', None)
@@ -418,6 +419,6 @@ if __name__ == '__main__':
         ['experiment_number'] + [col for col in experiment_results.columns if col != 'experiment_number']]
     experiment_results_grouped = group_test_results(experiment_results)
 
-    file_path = './data_out/new_experiment_results_grouped_ex_k_3.csv'
+    file_path = './data_out/experiment_results_grouped_1.csv'
     experiment_results_grouped.to_csv(path_or_buf=file_path, index=False)
-    print(get_n_best_results(file_path=file_path, n=2))
+    print(get_n_best_results(file_path=file_path, n=1))

@@ -44,6 +44,11 @@ def calculate_utilities_from_prob(num_students: int, num_schools: int, probabili
     return student_utility
 
 
+def calculate_utilities_from_prob_individual(student: int, num_schools: int, probabilities: np.ndarray, profiles: np.ndarray):
+    student_utility = np.sum(probabilities * profiles[student])
+    return student_utility
+
+
 def generate_subsets(nums, k):
     n = len(nums)
     result = []

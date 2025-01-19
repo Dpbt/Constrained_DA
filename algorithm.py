@@ -267,7 +267,7 @@ def manipulation_algorithm(algorithm: str,
                            num_manipulations: int
                            ):
     if algorithm == 'gs':
-        prob_func = k_gs_algorithm_prob
+        prob_func = k_gs_algorithm_prob_2
     elif algorithm == 'boston':
         prob_func = k_boston_algorithm_prob
     else:

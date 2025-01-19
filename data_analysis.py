@@ -19,6 +19,6 @@ if __name__ == '__main__':
     pd.set_option('display.max_colwidth', None)
 
     file_path = './data_out/new_experiment_results_grouped_ex_k_3.csv'
-    top_results, best_k_to_schools_ratio_mean = get_n_best_results(file_path=file_path, n=1)
+    top_results, best_k_to_schools_ratio_mean = get_n_best_results(file_path=file_path, n=2)
     print(top_results)
     print(best_k_to_schools_ratio_mean)
