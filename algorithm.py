@@ -122,57 +122,62 @@ def k_boston_algorithm(num_students: int, num_schools: int, preferences: np.ndar
     return assignments, unassigned_students
 
 
-def k_gs_algorithm(num_students: int, num_schools: int, preferences: np.ndarray, capacities: np.ndarray, k: int
-                   ) -> tuple[dict[int, list[int]], set[int]]:
+def k_gs_algorithm(
+    num_students: int,
+    num_schools: int,
+    preferences: np.ndarray,
+    capacities: np.ndarray,
+    k: int,
+) -> tuple[dict[int, list[int]], set[int]]:
+    preferences_list = preferences.tolist()
+    capacities_list = capacities.tolist()
     # Реализация второго алгоритма распределения
-    assignments = {school: [] for school in range(num_schools)}
+    assignments = {school: set() for school in range(num_schools)}
     unassigned_students = set(range(num_students))
-    curr_student_school = np.array([0 for _ in range(num_students)])
+    curr_student_school = [0] * num_students
     num_applications = k * num_students
     num_iter = 0
 
-    while np.sum(curr_student_school) < num_applications:
+    curr_student_school_sum = 0
+    while curr_student_school_sum < num_applications:
         num_iter += 1
-        # print("new_iter", assignments, unassigned_students, curr_student_school)
 
         for student in unassigned_students:
             curr_student_school[student] += 1
+            curr_student_school_sum += 1
 
         for school in range(num_schools):
-            current_applicants = []
+            current_applicants_set = set()
             for student in unassigned_students:
-                # print(preferences, curr_student_school, student, curr_student_school[student] - 1, k)
-                if curr_student_school[student] <= k and preferences[student][curr_student_school[student] - 1] == school:
-                    current_applicants.append(student)
+                if (
+                    curr_student_school[student] <= k
+                    and preferences_list[student][curr_student_school[student] - 1] == school
+                ):
+                    current_applicants_set.add(student)
 
-            current_capacity = capacities[school] - len(assignments[school])
-            # print("school", school, current_applicants, current_capacity)
+            current_capacity = capacities_list[school] - len(assignments[school])
 
-            if len(current_applicants) <= current_capacity:
-                assignments[school].extend(current_applicants)
-                for student in current_applicants:
-                    unassigned_students.remove(student)
-                    # curr_student_school[student] += 1
+            if len(current_applicants_set) <= current_capacity:
+                assignments[school].update(current_applicants_set)
+                unassigned_students -= current_applicants_set
 
             else:
                 curr_assignments = assignments[school]
-                all_current_applicants = curr_assignments + current_applicants
-                students_to_assign = np.random.choice(all_current_applicants, size=capacities[school], replace=False)
-                assignments[school] = list(students_to_assign)
-                # print("too much", assignments[school], all_current_applicants, students_to_assign, set(curr_assignments), set(students_to_assign))
-                for student in students_to_assign:
-                    unassigned_students.discard(student)
-                    # curr_student_school[student] += 1
-                for student in set(curr_assignments) - set(students_to_assign):
-                    unassigned_students.add(student)
+                all_current_applicants = curr_assignments.union(current_applicants_set)
+                all_current_applicants_list = list(all_current_applicants)
 
-                # print("after_check", assignments, unassigned_students, curr_student_school)
+                random.shuffle(all_current_applicants_list)
+                students_to_assign = all_current_applicants_list[:capacities_list[school]]
+                students_to_assign_set = set(students_to_assign)
+
+                assignments[school] = students_to_assign_set
+                unassigned_students -= students_to_assign_set
+                unassigned_students.update(curr_assignments - students_to_assign_set)
 
         if not unassigned_students:
             break
 
-    # print(num_iter)
-
+    assignments = {school: list(assignments[school]) for school in range(num_schools)}
     return assignments, unassigned_students
 
 
