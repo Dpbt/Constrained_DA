@@ -1,9 +1,11 @@
 import numpy as np
 import pandas as pd
-from numba import njit, jit
 import itertools
+import random
 
-# откуда фиксируется seed ?
+
+random.seed(42)
+np.random.seed(42)
 
 
 def generate_random_profiles(num_students: int, num_schools: int):

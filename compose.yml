@@ -1,0 +1,9 @@
+version: '3'
+services:
+  main:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./data_out/:/app/data_out/
+    command: python3 test_system_3.py

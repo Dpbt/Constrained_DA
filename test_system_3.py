@@ -17,6 +17,7 @@ from data_analysis import get_n_best_results
 random.seed(42)
 np.random.seed(42)
 
+
 # Допилить отдельные полезности для манипуляторов / честных игроков, мб отдельную статистику по unassigned_students для них
 def run_experiment_k(algorithm: str,
                      num_students: int,
@@ -232,6 +233,8 @@ def massive_run(tests: list, display_progress: bool = False):
     else:
         iterator = tests
 
+    test_number = tests[0][0]
+
     for exp_number, test in iterator:
         exp_num += 1
 
@@ -278,12 +281,15 @@ def massive_run(tests: list, display_progress: bool = False):
                     warnings.filterwarnings("ignore", category=FutureWarning)
                     test_results = pd.concat(experiment_results, ignore_index=True)
 
+    test_results_grouped = group_test_results(test_results)
+    test_results_grouped.to_csv(path_or_buf=f"./data_out/test_results_{test_number}.csv", index=False)
+
     return test_results
 
 
 def parallel_run(tests: list, batch_size: int = 1, n_jobs: int = 1, display_progress: bool = False):
     tests = list(enumerate(tests))
-    random.shuffle(tests)
+    # random.shuffle(tests)
 
     num_batch = int(len(tests) / batch_size) if len(tests) % batch_size == 0 else int(len(tests) / batch_size) + 1
     tests_with_batch = [tests[i * batch_size: (i + 1) * batch_size] for i in range(num_batch)]
@@ -299,130 +305,6 @@ def parallel_run(tests: list, batch_size: int = 1, n_jobs: int = 1, display_prog
 
 if __name__ == '__main__':
 
-    # tests = [{"num_students": 20, "num_schools": 8, "capacities": np.array([8, 4, 3, 1, 1, 1, 1, 1]), "num_capacities": 3, "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 5}]
-    tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 6},
-             {"num_students": 10, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
-             {"num_students": 15, "num_schools": 6, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
-             {"num_students": 10, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
-             {"num_students": 30, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
-             {"num_students": 18, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
-             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
-             {"num_students": 20, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 7},
-             {"num_students": 15, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 3},
-             {"num_students": 30, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 4}]
-
-    tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 5,
-              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 6},
-             {"num_students": 10, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 5,
-              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 5},
-             {"num_students": 15, "num_schools": 6, "num_capacities": 5, "num_repeats_profiles": 5,
-              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 5},
-             {"num_students": 10, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 5,
-              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 5},
-             {"num_students": 30, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 5,
-              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 5},
-             {"num_students": 18, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 5,
-              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 5},
-             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 5,
-              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 5},
-             {"num_students": 20, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 5,
-              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 7},
-             {"num_students": 15, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 5,
-              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 3},
-             {"num_students": 30, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 5,
-              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 4},
-             {"num_students": 24, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 5,
-              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 3},
-             {"num_students": 18, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 5,
-              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 2},
-             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 5,
-              "num_repeat_sampler": 50, "epsilon": 0.01, "num_manipulations": 3},
-             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 5,
-              "num_repeat_sampler": 50, "epsilon": 0.005, "num_manipulations": 3}
-             ]
-
-    tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 6},
-             {"num_students": 10, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 10},
-             {"num_students": 15, "num_schools": 6, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 5},
-             {"num_students": 10, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 5},
-             {"num_students": 30, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 5},
-             {"num_students": 18, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 5},
-             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 5},
-             {"num_students": 20, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 7},
-             {"num_students": 15, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 3},
-             {"num_students": 30, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 4},
-             {"num_students": 24, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 3},
-             {"num_students": 18, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 2},
-             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 3},
-             {"num_students": 40, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.01, "num_manipulations": 3},
-             {"num_students": 30, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.005, "num_manipulations": 3},
-             {"num_students": 40, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.005, "num_manipulations": 3},
-             {"num_students": 50, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.005, "num_manipulations": 3},
-             {"num_students": 30, "num_schools": 8, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.005, "num_manipulations": 5},
-             {"num_students": 10, "num_schools": 2, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.005, "num_manipulations": 1},
-             {"num_students": 26, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.005, "num_manipulations": 3},
-             {"num_students": 28, "num_schools": 4, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 3},
-             {"num_students": 30, "num_schools": 6, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 3},
-             {"num_students": 32, "num_schools": 5, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 3},
-             {"num_students": 18, "num_schools": 3, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 100, "epsilon": 0.02, "num_manipulations": 3},
-             ]
-
-    # tests_lists = {
-    #     "num_students": [10, 15, 20, 25, 30, 40, 50, 75, 100],
-    #     "num_schools": [2, 3, 4, 5, 6, 7, 8, 9, 10],
-    #     "num_capacities": [10],
-    #     "num_repeats_profiles": [10],
-    #     "num_repeat_sampler": [100],
-    #     "epsilon": [0.002, 0.005, 0.01, 0.02],
-    #     "manipulators_ratio": [0.25, 0.5, 0.75, 1],
-    #     "num_manipulations": [0.25, 0.5, 0.75, 1],
-    # }
-
-    # tests_lists = {
-    #     "num_students": [300],
-    #     "num_schools": [5, 10, 20],
-    #     "num_capacities": [10],
-    #     "num_repeats_profiles": [10],
-    #     "num_repeat_sampler": [100],
-    #     "epsilon": [0.002, 0.005, 0.01, 0.02],
-    #     "manipulators_ratio": [0.25, 0.5, 0.75, 1],
-    #     "num_manipulations": [0.25, 0.5, 0.75, 1],
-    # }
-
     # tests_lists = {
     #     "num_students": [150],
     #     "num_schools": [5, 10, 20],
@@ -434,18 +316,18 @@ if __name__ == '__main__':
     #     "num_manipulations": [0.25, 0.5, 0.75, 1],
     # }
 
-    # tests_lists = {
-    #     "num_students": [150],
-    #     "num_schools": [10],
-    #     "num_capacities": [5],
-    #     "num_repeats_profiles": [5],
-    #     "num_repeat_sampler": [50],
-    #     "epsilon": [0.002, 0.005],
-    #     "manipulators_ratio": [0.75, 1],
-    #     "num_manipulations": [0.75, 1],
-    # }
+    tests_lists = {
+        "num_students": [150],
+        "num_schools": [10],
+        "num_capacities": [5],
+        "num_repeats_profiles": [5],
+        "num_repeat_sampler": [50],
+        "epsilon": [0.002, 0.005],
+        "manipulators_ratio": [0.75, 1],
+        "num_manipulations": [0.75, 1],
+    }
 
-    # tests = generate_tests_from_lists(**tests_lists)
+    tests = generate_tests_from_lists(**tests_lists)
 
     tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
               "num_repeat_sampler": 50, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 6},
@@ -454,10 +336,6 @@ if __name__ == '__main__':
              {"num_students": 22, "num_schools": 8, "num_capacities": 5, "num_repeats_profiles": 10,
               "num_repeat_sampler": 50, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
              ]
-
-    # tests = [{"num_students": 100, "num_schools": 10, "num_capacities": 5, "num_repeats_profiles": 5,
-    #           "num_repeat_sampler": 50, "epsilonpy-spy top -- python your_script.py": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 6},
-    #          ]
 
     # print(len(tests))
     # print(tests)
