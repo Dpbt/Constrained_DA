@@ -317,27 +317,27 @@ if __name__ == '__main__':
     # }
 
     tests_lists = {
-        "num_students": [150],
-        "num_schools": [10],
+        "num_students": [100, 200, 300, 400, 500],
+        "num_schools": [5, 10, 20],
         "num_capacities": [5],
         "num_repeats_profiles": [5],
         "num_repeat_sampler": [50],
-        "epsilon": [0.002, 0.005],
-        "manipulators_ratio": [0.75, 1],
-        "num_manipulations": [0.75, 1],
+        "epsilon": [0.002, 0.005, 0.01],
+        "manipulators_ratio": [0.5, 0.75, 1],
+        "num_manipulations": [0.5, 0.75, 1],
     }
 
     tests = generate_tests_from_lists(**tests_lists)
 
-    tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 50, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 6},
-             {"num_students": 25, "num_schools": 9, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 50, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
-             {"num_students": 22, "num_schools": 8, "num_capacities": 5, "num_repeats_profiles": 10,
-              "num_repeat_sampler": 50, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
-             ]
+    # tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
+    #           "num_repeat_sampler": 50, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 6},
+    #          {"num_students": 25, "num_schools": 9, "num_capacities": 5, "num_repeats_profiles": 10,
+    #           "num_repeat_sampler": 50, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
+    #          {"num_students": 22, "num_schools": 8, "num_capacities": 5, "num_repeats_profiles": 10,
+    #           "num_repeat_sampler": 50, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
+    #          ]
 
-    # print(len(tests))
+    print(len(tests))
     # print(tests)
 
     pd.set_option('display.max_columns', None)
