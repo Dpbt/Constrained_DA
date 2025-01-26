@@ -5,6 +5,7 @@ from joblib import Parallel, delayed
 from tqdm import tqdm
 import warnings
 import random
+import os
 
 from utils import (generate_random_profiles, generate_school_capacities, generate_k_restricted_preferences,
                    calculate_utility, calculate_utilities_from_prob, generate_unassigned_statistic,
@@ -288,7 +289,7 @@ def massive_run(tests: list, display_progress: bool = False):
 
 
 def parallel_run(tests: list, batch_size: int = 1, n_jobs: int = 1, display_progress: bool = False):
-    tests = list(enumerate(tests))
+    # tests = list(enumerate(tests))
     # random.shuffle(tests)
 
     num_batch = int(len(tests) / batch_size) if len(tests) % batch_size == 0 else int(len(tests) / batch_size) + 1
@@ -337,7 +338,18 @@ if __name__ == '__main__':
     #           "num_repeat_sampler": 50, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
     #          ]
 
-    print(len(tests))
+    files = os.listdir('./data_out')
+
+    exp_numbers = []
+    for f in files:
+        if f.startswith('test_results_') and f.endswith('.csv'):
+            number = f.split('_')[-1].replace('.csv', '')
+            exp_numbers.append(int(number))
+
+    tests = [[i, test] for i, test in enumerate(tests) if i not in exp_numbers]
+
+    # print(len(exp_numbers))
+    # print(len(tests))
     # print(tests)
 
     pd.set_option('display.max_columns', None)
