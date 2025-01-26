@@ -1,2 +1,8 @@
 .idea/
 **/__pycache__/
+output.prof
+requirements.in
+profile.svg
+result.json
+conda-requirements.txt
+./data_out_server
