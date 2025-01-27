@@ -156,6 +156,7 @@ def run_experiment(num_students: int,
 
         # gs algorithm
         for k_gs in range(1, num_schools + 1):
+            # print(num_manipulations)
             probabilities, utilities, manipulators, unassigned_statistic = run_experiment_k(
                 algorithm="gs",
                 num_students=num_students,
