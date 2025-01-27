@@ -284,7 +284,7 @@ def massive_run(tests: list, display_progress: bool = False):
                     test_results = pd.concat(experiment_results, ignore_index=True)
 
     test_results_grouped = group_test_results(test_results)
-    test_results_grouped.to_csv(path_or_buf=f"./data_out/test_results_{test_number}.csv", index=False)
+    test_results_grouped.to_csv(path_or_buf=f"./data_out/test_results_50_{test_number}.csv", index=False)
 
     return test_results
 
@@ -318,26 +318,29 @@ if __name__ == '__main__':
     #     "num_manipulations": [0.25, 0.5, 0.75, 1],
     # }
 
+    # tests_lists = {
+    #     "num_students": [100, 200, 300, 400, 500],
+    #     "num_schools": [5, 10, 20],
+    #     "num_capacities": [5],
+    #     "num_repeats_profiles": [5],
+    #     "num_repeat_sampler": [50],
+    #     "epsilon": [0.002, 0.005, 0.01],
+    #     "manipulators_ratio": [0.5, 0.75, 1],
+    #     "num_manipulations": [0.5, 0.75, 1],
+    # }
+
     tests_lists = {
-        "num_students": [100, 200, 300, 400, 500],
-        "num_schools": [5, 10, 20],
+        "num_students": [100],
+        "num_schools": [2, 5, 8, 11, 14],
         "num_capacities": [5],
         "num_repeats_profiles": [5],
         "num_repeat_sampler": [50],
-        "epsilon": [0.002, 0.005, 0.01],
-        "manipulators_ratio": [0.5, 0.75, 1],
+        "epsilon": [0.001, 0.002, 0.005, 0.01],
+        "manipulators_ratio": [0.25, 0.5, 0.75, 1],
         "num_manipulations": [0.5, 0.75, 1],
     }
 
     tests = generate_tests_from_lists(**tests_lists)
-
-    # tests = [{"num_students": 20, "num_schools": 7, "num_capacities": 5, "num_repeats_profiles": 10,
-    #           "num_repeat_sampler": 50, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 6},
-    #          {"num_students": 25, "num_schools": 9, "num_capacities": 5, "num_repeats_profiles": 10,
-    #           "num_repeat_sampler": 50, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
-    #          {"num_students": 22, "num_schools": 8, "num_capacities": 5, "num_repeats_profiles": 10,
-    #           "num_repeat_sampler": 50, "epsilon": 0.02, "manipulators_ratio": 0.6, "num_manipulations": 5},
-    #          ]
 
     files = os.listdir('./data_out')
 
