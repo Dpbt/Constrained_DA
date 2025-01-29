@@ -100,9 +100,10 @@ if __name__ == "__main__":
     pd.set_option("display.width", None)
     pd.set_option("display.max_colwidth", None)
 
-    # find_missing_files(folder_path="./data_out_server_2", start=0, end=404)
+    # find_missing_files(folder_path="./data_out_server_3", start=0, end=239)
+    find_missing_files(folder_path="./data_out/technical", start=0, end=239)
 
-    # concatenate_csv_files(folder_path="./data_out_server_2", output_file="./data_out/data_out_server_2.csv")
+    concatenate_csv_files(folder_path="./data_out/technical", output_file="data_out/data_out_100_1.csv")
 
     # tests_lists = {
     #     "num_students": [100, 200, 300, 400, 500],
@@ -115,21 +116,21 @@ if __name__ == "__main__":
     #     "num_manipulations": [0.5, 0.75, 1],
     # }
 
-    filters = {
-        "num_students": [100, 200, 300, 400],
-        "num_schools": [5, 10, 20],
-        "epsilon": [0.002, 0.005, 0.01],
-        "manipulators_ratio": [0.5, 0.75, 1],
-        "num_manipulations": [0.5, 0.75, 1],
-    }
+    # filters = {
+    #     "num_students": [100, 200, 300, 400],
+    #     "num_schools": [5, 10, 20],
+    #     "epsilon": [0.002, 0.005, 0.01],
+    #     "manipulators_ratio": [0.5, 0.75, 1],
+    #     "num_manipulations": [0.5, 0.75, 1],
+    # }
+    #
+    # filter_dataframe_by_conditions(
+    #     file_path="./data_out/data_out_server_3.csv",
+    #     output_file="./data_out/data_out_server_3_filtered.csv",
+    #     filters=filters,
+    # )
 
-    filter_dataframe_by_conditions(
-        file_path="./data_out/data_out_server_2.csv",
-        output_file="./data_out/data_out_server_2_filtered.csv",
-        filters=filters,
-    )
-
-    file_path = './data_out/data_out_server_2_filtered.csv'
+    file_path = "data_out/data_out_100_1.csv"
     top_results, best_k_to_schools_ratio_mean = get_n_best_results(file_path=file_path, n=1)
     print(top_results)
     print(best_k_to_schools_ratio_mean)

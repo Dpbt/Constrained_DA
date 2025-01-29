@@ -284,7 +284,7 @@ def massive_run(tests: list, display_progress: bool = False):
                     test_results = pd.concat(experiment_results, ignore_index=True)
 
     test_results_grouped = group_test_results(test_results)
-    test_results_grouped.to_csv(path_or_buf=f"./data_out/test_results_50_{test_number}.csv", index=False)
+    test_results_grouped.to_csv(path_or_buf=f"./data_out/technical/test_results_100_{test_number}.csv", index=False)
 
     return test_results
 
@@ -353,7 +353,7 @@ if __name__ == '__main__':
     tests = [[i, test] for i, test in enumerate(tests) if i not in exp_numbers]
 
     # print(len(exp_numbers))
-    # print(len(tests))
+    print(len(tests))
     # print(tests)
 
     pd.set_option('display.max_columns', None)
@@ -364,6 +364,6 @@ if __name__ == '__main__':
         ['experiment_number'] + [col for col in experiment_results.columns if col != 'experiment_number']]
     experiment_results_grouped = group_test_results(experiment_results)
 
-    file_path = './data_out/experiment_results_final_test_300.csv'
+    file_path = './data_out/data_out_100_1.csv'
     experiment_results_grouped.to_csv(path_or_buf=file_path, index=False)
     print(get_n_best_results(file_path=file_path, n=1))
