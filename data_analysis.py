@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import os
 import itertools
 import json
@@ -149,6 +150,27 @@ def add_columns_and_save(input_file, output_file):
     return df
 
 
+def add_num_manipulations_ratio(input_file_path, output_file_path):
+    # Чтение данных из входного файла
+    df = pd.read_csv(input_file_path)
+
+    # Функция для определения num_manipulations_ratio
+    def determine_ratio(num_manipulations, num_schools):
+        if num_schools == 0:
+            return np.nan
+        actual_ratio = num_manipulations / num_schools
+        possible_ratios = [0.25, 0.5, 0.75, 1.0]
+        return min(possible_ratios, key=lambda x: abs(x - actual_ratio))
+
+    # Добавляем новый столбец num_manipulations_ratio
+    df['num_manipulations_ratio'] = df.apply(lambda row: determine_ratio(row['num_manipulations'], row['num_schools']), axis=1)
+
+    # Сохранение обновленного DataFrame в выходной файл
+    df.to_csv(output_file_path, index=False)
+
+    print(f"Обработка завершена. Результаты сохранены в {output_file_path}")
+
+
 if __name__ == "__main__":
     pd.set_option("display.max_columns", None)
     pd.set_option("display.width", None)
@@ -224,6 +246,8 @@ if __name__ == "__main__":
     # add_columns_and_save(input_file="./data_out/data_out_100_1.csv",
     #                      output_file="./data_out/data_out_100_1.csv")
 
+    # add_num_manipulations_ratio(input_file_path="./data_out/data_out_100_1.csv",
+    #                             output_file_path="./data_out/data_out_100_1.csv")
 
 
 
