@@ -155,7 +155,7 @@ def create_comprehensive_table(file_path, output_file, target, num_best=1, only_
     agg_data = grouped[agg_columns].mean()
 
     # Форматирование данных для вывода
-    def format_cell(row, accuracy=3):
+    def format_cell(row, accuracy=2):
         cell_parts = []
         if show_k_ratio:
             cell_parts.append(f"K/S ratio: {row['k_to_schools_ratio'].iloc[0]:.{accuracy}f}")
@@ -202,13 +202,81 @@ if __name__ == "__main__":
     # column_list = df.columns.tolist()
     # print(column_list)
 
-    filters = {
-        "num_students": [500],
-        "num_schools": [5, 10, 20],
-        "epsilon": [0.002, 0.005, 0.01],
-        "manipulators_ratio": [0.5, 0.75, 1],
-        "num_manipulations": [0.5, 0.75, 1],
-    }
+    # 100 - 8, 500 - 5
+
+    # Part 100-500
+
+    utility_table_students_schools_k(file_path="./data_out/data_out_server_3.csv",
+                                     output_file="./data_out/analysis/table_filtered_students_schools_k",
+                                     num_best=1,
+                                     only_gs=True,
+                                     filters=None)
+
+    # filters = {
+    #     "num_students": [100, 200, 300, 400, 500],
+    #     "num_schools": [5, 10, 20],
+    #     "epsilon": [0.002, 0.005, 0.01],
+    #     "manipulators_ratio": [0.5, 0.75, 1],
+    #     "num_manipulations": [0.5, 0.75, 1],
+    # }
+    #
+    # filters = {
+    #     "num_students": [400],
+    #     "num_schools": [5],
+    #     "epsilon": [0.005],
+    #     "manipulators_ratio": [0.5, 0.75, 1],
+    #     "num_manipulations": [0.75],
+    # }
+    #
+    # create_comprehensive_table(file_path="./data_out/data_out_server_3.csv",
+    #                            output_file="./data_out/analysis/table_test_1",
+    #                            target="manipulators_ratio",
+    #                            num_best=2,
+    #                            only_gs=True,
+    #                            filters=filters,
+    #                            groupby="num_students",
+    #                            show_k_ratio=True,
+    #                            show_utility=True, show_unassigned=True,
+    #                            show_fair=True, show_manipulator=True)
+    #
+    # filters = {
+    #     "num_students": [400],
+    #     "num_schools": [5],
+    #     "epsilon": [0.005],
+    #     "manipulators_ratio": [0.75],
+    #     "num_manipulations_ratio": [0.5, 0.75, 1],
+    # }
+    #
+    # create_comprehensive_table(file_path="./data_out/data_out_server_3.csv",
+    #                            output_file="./data_out/analysis/table_test_1",
+    #                            target="num_manipulations_ratio",
+    #                            num_best=2,
+    #                            only_gs=True,
+    #                            filters=filters,
+    #                            groupby="num_students",
+    #                            show_k_ratio=True,
+    #                            show_utility=True, show_unassigned=True,
+    #                            show_fair=True, show_manipulator=True)
+    #
+    # filters = {
+    #     "num_students": [400],
+    #     "num_schools": [5],
+    #     "epsilon": [0.002, 0.005, 0.01],
+    #     "manipulators_ratio": [0.75],
+    #     "num_manipulations_ratio": [0.75],
+    # }
+    #
+    # create_comprehensive_table(file_path="./data_out/data_out_server_3.csv",
+    #                            output_file="./data_out/analysis/table_test_1",
+    #                            target="epsilon",
+    #                            num_best=2,
+    #                            only_gs=True,
+    #                            filters=filters,
+    #                            groupby="num_students",
+    #                            show_k_ratio=True,
+    #                            show_utility=True, show_unassigned=True,
+    #                            show_fair=True, show_manipulator=True)
+
     filters_2 = {
         "num_students": [100],
         "num_schools": [2, 5, 8, 11, 14],
@@ -217,12 +285,18 @@ if __name__ == "__main__":
         "num_manipulations": [0.5, 0.75, 1],
     }
 
-    # 100 - 8, 500 - 5
-    # create_comprehensive_table(file_path="./data_out/data_out_server_3.csv",
+    filters_2 = {
+        "num_students": [100],
+        "num_schools": [5, 8, 11, 14],
+        "epsilon": [0.002],
+        "manipulators_ratio": [0.25, 0.5, 0.75, 1],
+        "num_manipulations": [0.75],
+    }
+
     create_comprehensive_table(file_path="./data_out/data_out_100_1.csv",
                                output_file="./data_out/analysis/table_test_1",
-                               target="num_manipulations_ratio",
-                               num_best=1,
+                               target="manipulators_ratio",
+                               num_best=2,
                                only_gs=True,
                                filters=filters_2,
                                groupby="num_schools",
@@ -230,6 +304,43 @@ if __name__ == "__main__":
                                show_utility=True, show_unassigned=True,
                                show_fair=True, show_manipulator=True)
 
+    filters_2 = {
+        "num_students": [100],
+        "num_schools": [5, 8, 11, 14],
+        "epsilon": [0.005],
+        "manipulators_ratio": [0.75],
+        "num_manipulations_ratio": [0.5, 0.75, 1],
+    }
+
+    create_comprehensive_table(file_path="./data_out/data_out_100_1.csv",
+                               output_file="./data_out/analysis/table_test_1",
+                               target="num_manipulations_ratio",
+                               num_best=2,
+                               only_gs=True,
+                               filters=filters_2,
+                               groupby="num_schools",
+                               show_k_ratio=True,
+                               show_utility=True, show_unassigned=True,
+                               show_fair=True, show_manipulator=True)
+
+    filters_2 = {
+        "num_students": [100],
+        "num_schools": [5, 8, 11, 14],
+        "epsilon": [0.001, 0.002, 0.005, 0.01],
+        "manipulators_ratio": [0.75],
+        "num_manipulations_ratio": [0.75],
+    }
+
+    create_comprehensive_table(file_path="./data_out/data_out_100_1.csv",
+                               output_file="./data_out/analysis/table_test_1",
+                               target="epsilon",
+                               num_best=2,
+                               only_gs=True,
+                               filters=filters_2,
+                               groupby="num_schools",
+                               show_k_ratio=True,
+                               show_utility=True, show_unassigned=True,
+                               show_fair=True, show_manipulator=True)
 
 
 
@@ -259,16 +370,39 @@ if __name__ == "__main__":
         "num_manipulations": [0.5, 0.75, 1],
     }
 
-    # utility_table_students_schools_k(file_path="./data_out/data_out_server_3.csv",
-    #                                  output_file="./data_out/analysis/table_filtered_students_schools_k",
-    #                                  num_best=1,
-    #                                  only_gs=True,
-    #                                  filters=filters)
+
+
+    filters_2 = {
+        "num_students": [100],
+        "num_schools": [2, 5, 8, 11, 14],
+        "epsilon": [0.001, 0.002, 0.005, 0.01],
+        "manipulators_ratio": [0.25, 0.5, 0.75, 1],
+        "num_manipulations": [0.5, 0.75, 1],
+    }
+
     # utility_table_students_schools_k(file_path="./data_out/data_out_100_1.csv",
     #                                  output_file="./data_out/analysis/table_100_students_schools_k",
     #                                  num_best=1,
     #                                  only_gs=True,
-    #                                  filters=filters_2)
+    #                                  filters=None)
+
+    # create_comprehensive_table(file_path="./data_out/data_out_100_1.csv",
+    #                             output_file = "./data_out/analysis/table_test_1",
+    #                             target = "num_manipulations_ratio",
+    #                             num_best = 1,
+    #                             only_gs = True,
+    #                             filters = filters_2,
+    #                             groupby = "num_schools",
+    #                             show_k_ratio = True,
+    #                             show_utility = True, show_unassigned = True,
+    #                             show_fair = True, show_manipulator = True)
+
+
+
+
+
+
+
 
     # filters = {
     #     "epsilon": [0.002, 0.005, 0.01],
