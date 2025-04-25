@@ -166,13 +166,6 @@ def group_test_results(df: pd.DataFrame) -> pd.DataFrame:
     return grouped_df
 
 
-# def generate_tests_from_lists(*param_lists):
-#     param_names = [f'param{i + 1}' for i in range(len(param_lists))]
-#     combinations = itertools.product(*param_lists)
-#     result = [dict(zip(param_names, combo)) for combo in combinations]
-#     return result
-
-
 def generate_tests_from_lists(**param_lists):
     param_names = list(param_lists.keys())
     combinations = itertools.product(*param_lists.values())
@@ -228,6 +221,8 @@ if __name__ == '__main__':
      average_percentage_unassigned_manipulator_students,
      average_utility_fair_students,
      average_utility_manipulator_students)
+
+    print(generate_possible_manipulations(num_schools=4, preferences=np.array([0, 1]), k=2))
 
 
 

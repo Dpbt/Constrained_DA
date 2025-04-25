@@ -206,11 +206,11 @@ if __name__ == "__main__":
 
     # concatenate_csv_files(folder_path="./data_out/technical", output_file="data_out/data_out_100_1.csv")
 
-    # find_missing_files(folder_path="./data_out_server_3", start=0, end=400)
+    # find_missing_files(folder_path="./data_out_server", start=0, end=400)
     # find_missing_files(folder_path="./data_out/technical", start=0, end=239)
 
     # Отсутствующие эксперименты для 500
-    # file_path = "data_out/data_out_server_3.csv"
+    # file_path = "data_out/data_out_server.csv"
     # tests_lists = {
     #     "num_students": [500],
     #     "num_schools": [5, 10, 20],
@@ -223,7 +223,7 @@ if __name__ == "__main__":
 
     # Лучшие результаты и оптимальная длина списка
     # file_path = "data_out/data_out_100_1.csv"
-    # file_path = "data_out/data_out_server_3.csv"
+    # file_path = "data_out/data_out_server.csv"
     # file_path = "./data_out/data_out_100_filtered.csv"
     # top_results, best_k_to_schools_ratio_mean = get_n_best_results(file_path=file_path, n=1)
     # print(top_results)
@@ -238,7 +238,7 @@ if __name__ == "__main__":
     #     "num_manipulations": [0.5, 0.75, 1],
     # }
     # filter_dataframe_by_conditions(
-    #     file_path="./data_out/data_out_server_3.csv",
+    #     file_path="./data_out/data_out_server.csv",
     #     output_file="./data_out/data_out_server_3_filtered.csv",
     #     filters=filters,
     # )

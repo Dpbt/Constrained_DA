@@ -256,6 +256,7 @@ def k_gs_algorithm_prob_individual(num_students: int, num_schools: int, preferen
 
         # print("fin:", student, curr_school, curr_preference, curr_prob, num_competitors, curr_prob * capacities[curr_school] / num_competitors)
 
+        # print("S", curr_school, curr_prob, capacities[curr_school], num_competitors)
         probabilities[curr_school] = curr_prob * capacities[curr_school] / num_competitors
 
     # print(probabilities)
@@ -403,6 +404,7 @@ if __name__ == '__main__':
                                capacities=capacities, k=k, student=3)
     print(p3)
 
+
     # manipulators_ratio = 1
     # num_fair = round(num_students * (1 - manipulators_ratio))
     # fair_indices = np.random.choice(num_students, num_fair, replace=False)
@@ -437,5 +439,9 @@ if __name__ == '__main__':
     #                                           profiles=profiles)
     #
     # print("true utilities", utilities, sep='\n')
+
+    preferences = np.array([[0,2], [0, 1], [0, 1], [0, 1]])
+    print(k_gs_algorithm_prob_individual(num_students=4, num_schools=4, preferences=preferences,
+                                   capacities=np.array([1, 1, 1, 1]), k=2, student=0))
 
 
