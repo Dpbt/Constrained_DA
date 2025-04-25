@@ -10,8 +10,7 @@ import os
 from utils import (generate_random_profiles, generate_school_capacities, generate_k_restricted_preferences,
                    calculate_utility, calculate_utilities_from_prob, generate_unassigned_statistic,
                    group_test_results, generate_tests_from_lists)
-from algorithm import k_boston_algorithm, k_gs_algorithm, manipulation_algorithm, algorithm_sampler, manipulation_algorithm_2
-# from algorithm_2 import manipulation_algorithm_2
+from algorithm import algorithm_sampler, manipulation_algorithm
 from data_analysis import get_n_best_results
 
 
@@ -19,7 +18,6 @@ random.seed(42)
 np.random.seed(42)
 
 
-# Допилить отдельные полезности для манипуляторов / честных игроков, мб отдельную статистику по unassigned_students для них
 def run_experiment_k(algorithm: str,
                      num_students: int,
                      num_schools: int,
@@ -45,7 +43,7 @@ def run_experiment_k(algorithm: str,
 
     elif algorithm == 'gs':
         # Возможно, тут надо еще и это много раз повторять, если внутри manipulation_algorithm есть случайный выбор манипуляции/человека
-        preferences, manipulators = manipulation_algorithm_2(algorithm=algorithm,
+        preferences, manipulators = manipulation_algorithm(algorithm=algorithm,
                                                            num_students=num_students,
                                                            num_schools=num_schools,
                                                            profiles=profiles,
@@ -58,12 +56,12 @@ def run_experiment_k(algorithm: str,
         raise ValueError('Algorithm must be either "boston" or "gs"')
 
     probabilities, unassigned_statistic = algorithm_sampler(algorithm=algorithm,
-                                                                              num_students=num_students,
-                                                                              num_schools=num_schools,
-                                                                              preferences=preferences,
-                                                                              capacities=capacities,
-                                                                              k=k,
-                                                                              num_repeat=num_repeat_sampler)
+                                                              num_students=num_students,
+                                                              num_schools=num_schools,
+                                                              preferences=preferences,
+                                                              capacities=capacities,
+                                                              k=k,
+                                                              num_repeat=num_repeat_sampler)
 
     utilities = calculate_utilities_from_prob(num_students=num_students,
                                               num_schools=num_schools,

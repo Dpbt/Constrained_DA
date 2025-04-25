@@ -145,7 +145,7 @@ def k_gs_algorithm(num_students: int, num_schools: int, preferences: np.ndarray,
     return assignments, unassigned_students
 
 
-def generate_possible_preferences(num_schools: int, k: int) -> np.ndarray:
+def generate_possible_preferences_chinese(num_schools: int, k: int) -> np.ndarray:
     """
     Генерирует все возможные предпочтения, где:
     - сначала выбираются k школ в порядке возрастания
@@ -179,33 +179,7 @@ def generate_possible_preferences(num_schools: int, k: int) -> np.ndarray:
     return np.array(all_combinations, dtype=np.int32)
 
 
-def generate_paired_preferences(possible_preferences):
-    """
-    Генерирует массивы, где:
-    - первый и второй элементы = одна строка из possible_preferences
-    - третий и четвертый элементы = другая строка из possible_preferences
-
-    Возвращает массив shape (n, 4, num_schools), где n - число комбинаций
-    """
-    n_prefs = len(possible_preferences)
-    paired = []
-
-    # Генерируем все возможные пары (с повторами)
-    for i in range(n_prefs):
-        for j in range(n_prefs):
-            # Создаем массив 4 x num_schools
-            new_array = np.vstack([
-                possible_preferences[i],
-                possible_preferences[i],
-                possible_preferences[j],
-                possible_preferences[j]
-            ])
-            paired.append(new_array)
-
-    return np.array(paired)
-
-
-def generate_preferences(utils: list, num_students: int, k: int) -> list:
+def generate_symmetric_preferences(utils: list, num_students: int, k: int) -> list:
     """
     Генерирует профили предпочтений в формате кортежей с массивами NumPy.
     """
@@ -219,7 +193,7 @@ def generate_preferences(utils: list, num_students: int, k: int) -> list:
 
     # Генерируем возможные предпочтения для каждой группы
     prefs_per_group = {
-        u: generate_possible_preferences(num_schools, k) for u in groups.keys()
+        u: generate_possible_preferences_chinese(num_schools, k) for u in groups.keys()
     }
 
     # Создаём комбинации для уникальных групп
@@ -240,56 +214,6 @@ def generate_preferences(utils: list, num_students: int, k: int) -> list:
 
 
 def find_nash_equilibrium(results: list):
-    utility_dict = {}
-    for pref, utils in results:
-        p1_tuple = tuple(int(x) for x in pref[0])
-        p2_tuple = tuple(int(x) for x in pref[1])
-        utility_dict[(p1_tuple, p2_tuple)] = (float(utils[0]), float(utils[1]))
-
-    # Получаем уникальные стратегии
-    all_p1 = list({tuple(int(x) for x in pref[0]) for pref, _ in results})
-    all_p2 = list({tuple(int(x) for x in pref[1]) for pref, _ in results})
-
-    # print("all_p1", all_p1)
-
-    # Функция для проверки, является ли пара (p1, p2) равновесием Нэша
-    def is_nash_equilibrium(p1, p2):
-        u1_p1p2, u2_p1p2 = utility_dict[(p1, p2)]
-        # print("u1_p1p2", u1_p1p2, "u2_p1p2", u2_p1p2)
-
-        # Проверяем, может ли первый игрок улучшить u1, меняя p1 (при фиксированном p2)
-        for p1_candidate in all_p1:
-            if p1_candidate == p1:
-                continue
-            u1_new, u2_new = utility_dict[(p1_candidate, p2)]
-            if u1_new > u1_p1p2:
-                print("Not Nash 1", (p1, p2), p1_candidate, (u1_p1p2, u2_p1p2), (u1_new, u2_new))
-                return False
-
-        # Проверяем, может ли второй игрок улучшить u2, меняя p2 (при фиксированном p1)
-        for p2_candidate in all_p2:
-            if p2_candidate == p2:
-                continue
-            u1_new, u2_new = utility_dict[(p1, p2_candidate)]
-            if u2_new > u2_p1p2:
-                print("Not Nash 2", (p1, p2), p2_candidate, (u1_p1p2, u2_p1p2), (u1_new, u2_new))
-                return False
-
-        return True
-
-    # Ищем все равновесия Нэша
-    nash_equilibria = []
-    for p1 in all_p1:
-        for p2 in all_p2:
-            if (p1, p2) in utility_dict and is_nash_equilibrium(p1, p2):
-                nash_equilibria.append((p1, p2, utility_dict[(p1, p2)]))
-
-    print("Найдены следующие равновесия Нэша:")
-    for p1, p2, (u1, u2) in nash_equilibria:
-        print(f"Player 1: {p1}, Player 2: {p2}, Utilities: {u1:.2f}, {u2:.2f}")
-
-
-def find_nash_equilibrium_general(results: list):
     # Создаем словарь полезностей
     utility_dict = {}
     for pref, utils in results:
@@ -353,7 +277,7 @@ def find_nash_equilibrium_general(results: list):
     return nash_equilibria
 
 
-def find_nash_equilibrium_grouped(results: list, player_utils: list):
+def find_symmetric_nash_equilibrium(results: list, player_utils: list):
     """
     player_utils: список utility-профилей для каждого игрока [[79,16,4,1], [79,16,4,1], ...]
     """
@@ -466,11 +390,7 @@ if __name__ == '__main__':
     student_rank_default = [i for i in range(num_students)]
     student_ranks = list(itertools.permutations(student_rank_default))
 
-    # possible_preferences = generate_possible_preferences(num_schools, k)
-    # paired_prefs = generate_paired_preferences(possible_preferences)
-    # profile_prefs = list(itertools.product(possible_preferences, repeat=num_students))
-
-    profile_prefs = generate_preferences(profiles, num_students, k)
+    profile_prefs = generate_symmetric_preferences(profiles, num_students, k)
     print(len(profile_prefs))
     # for pr in profile_prefs:
     #     print(pr)
@@ -538,76 +458,9 @@ if __name__ == '__main__':
         # results.append((paired_pref[[0, 2]], pref_utils[[0, 2]]))
         results.append((profile_pref, pref_utils))
 
-    find_nash_equilibrium_grouped(results, profiles)
-    print()
+    find_symmetric_nash_equilibrium(results, profiles)
 
-    # algorithm = "chinese_parallel_mechanism"  # или "k_gs_algorithm"
-    #
-    # profile_pref = np.array([[0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 3, 2]])
-    # pref_utils = np.zeros(num_students)
-    #
-    # for student_rank in student_ranks:
-    #     if algorithm == "chinese_parallel_mechanism":
-    #         # Используем китайский параллельный механизм
-    #         school_assignments = chinese_parallel_mechanism(
-    #             num_students=num_students,
-    #             num_schools=num_schools,
-    #             preferences=np.array(profile_pref),
-    #             capacities=np.array([1, 1, 1, 1]),
-    #             k=k,
-    #             school_preferences=student_rank,
-    #         )
-    #
-    #         # print(school_assignments)
-    #
-    #     elif algorithm == "k_gs_algorithm":
-    #         profile_pref = np.array(profile_pref)
-    #         paired_pref = profile_pref[:, :2]
-    #         # Используем алгоритм Гейла-Шепли
-    #         school_assignments, unassigned = k_gs_algorithm(
-    #             num_students=num_students,
-    #             num_schools=num_schools,
-    #             preferences=np.array(profile_pref),
-    #             capacities=np.array([1, 1, 1, 1]),
-    #             k=k,
-    #             school_preferences=student_rank,
-    #         )
-    #
-    #     # print("paired pref", paired_pref, "school_assignments", school_assignments, unassigned)
-    #
-    #     student_assignments = {}
-    #     for school, students in school_assignments.items():
-    #         for student in students:
-    #             student_assignments[student] = school
-    #
-    #     # print(profile_pref)
-    #     # print(student_rank)
-    #     # print(student_assignments)
-    #
-    #     if algorithm == "chinese_parallel_mechanism":
-    #         curr_utils = np.array(
-    #             [
-    #                 profiles[student][student_assignments[student]]
-    #                 for student in range(num_students)
-    #             ]
-    #         )
-    #
-    #     elif algorithm == "k_gs_algorithm":
-    #         curr_utils = np.array(
-    #             [
-    #                 (
-    #                     profiles[student][student_assignments[student]]
-    #                     if student not in unassigned
-    #                     else 0
-    #                 )
-    #                 for student in range(num_students)
-    #             ]
-    #         )
-    #
-    #     pref_utils += curr_utils
-    #
-    #     # print(student_assignments, unassigned, curr_utils)
-    #
-    # pref_utils /= len(student_ranks)
-    #
-    # print(pref_utils)
+
+
+
+

@@ -1,4 +1,3 @@
-import time
 import numpy as np
 from utils import (generate_subsets, generate_k_restricted_preferences, generate_possible_manipulations,
                    calculate_utilities_from_prob, calculate_utilities_from_prob_individual,
@@ -22,7 +21,7 @@ def algorithm_sampler(algorithm: str, num_students: int, num_schools: int, prefe
     if algorithm == 'boston':
         algorithm_func = k_boston_algorithm
     elif algorithm == 'gs':
-        algorithm_func = k_gs_algorithm_2
+        algorithm_func = k_gs_algorithm
 
     for i in range(num_repeat):
         assignments, unassigned_students = algorithm_func(num_students=num_students,
@@ -76,68 +75,14 @@ def k_boston_algorithm(num_students: int, num_schools: int, preferences: np.ndar
     return assignments, unassigned_students
 
 
-def k_gs_algorithm(num_students: int, num_schools: int, preferences: np.ndarray, capacities: np.ndarray, k: int
-                   ) -> tuple[dict[int, list[int]], set[int]]:
-    # Реализация второго алгоритма распределения
-    assignments = {school: [] for school in range(num_schools)}
-    unassigned_students = set(range(num_students))
-    curr_student_school = np.array([0 for _ in range(num_students)])
-    num_applications = k * num_students
-    num_iter = 0
-
-    while np.sum(curr_student_school) < num_applications:
-        num_iter += 1
-        # print("new_iter", assignments, unassigned_students, curr_student_school)
-
-        for student in unassigned_students:
-            curr_student_school[student] += 1
-
-        for school in range(num_schools):
-            current_applicants = []
-            for student in unassigned_students:
-                # print(preferences, curr_student_school, student, curr_student_school[student] - 1, k)
-                if curr_student_school[student] <= k and preferences[student][curr_student_school[student] - 1] == school:
-                    current_applicants.append(student)
-
-            current_capacity = capacities[school] - len(assignments[school])
-            # print("school", school, current_applicants, current_capacity)
-
-            if len(current_applicants) <= current_capacity:
-                assignments[school].extend(current_applicants)
-                for student in current_applicants:
-                    unassigned_students.remove(student)
-                    # curr_student_school[student] += 1
-
-            else:
-                curr_assignments = assignments[school]
-                all_current_applicants = curr_assignments + current_applicants
-                # students_to_assign = np.random.choice(all_current_applicants, size=capacities[school], replace=False)
-                students_to_assign = all_current_applicants[:capacities[school]]
-                assignments[school] = list(students_to_assign)
-                # print("too much", assignments[school], all_current_applicants, students_to_assign, set(curr_assignments), set(students_to_assign))
-                for student in students_to_assign:
-                    unassigned_students.discard(student)
-                    # curr_student_school[student] += 1
-                for student in set(curr_assignments) - set(students_to_assign):
-                    unassigned_students.add(student)
-
-                # print("after_check", assignments, unassigned_students, curr_student_school)
-
-        if not unassigned_students:
-            break
-
-    # print(num_iter)
-
-    return assignments, unassigned_students
-
-
-def k_gs_algorithm_2(
+def k_gs_algorithm(
     num_students: int,
     num_schools: int,
     preferences: np.ndarray,
     capacities: np.ndarray,
     k: int,
 ) -> tuple[dict[int, list[int]], set[int]]:
+
     preferences_list = preferences.tolist()
     capacities_list = capacities.tolist()
     # Реализация второго алгоритма распределения
@@ -190,102 +135,6 @@ def k_gs_algorithm_2(
     return assignments, unassigned_students
 
 
-def k_gs_algorithm_prob(num_students: int, num_schools: int, preferences: np.ndarray, capacities: np.ndarray, k: int):
-    # Оценка вероятности быть назначенным в каждую школу для каждого ученика при алгоритме k_gs
-    statistic = generate_statistic(num_schools=num_schools, preferences=preferences, k=k)
-    probabilities = np.zeros((num_students, num_schools))
-
-    for student in range(num_students):
-        for curr_preference in range(k):
-            curr_school = preferences[student, curr_preference]
-            if curr_preference > 0:
-                # print(student, pref, curr_school)
-                curr_competitors = min(capacities[curr_school], np.sum(statistic[:curr_preference, curr_school]))
-            else:
-                curr_competitors = 0
-            probabilities[student][curr_school] = min(capacities[curr_school] / (statistic[curr_preference, curr_school] + curr_competitors), 1)
-
-    return probabilities
-
-
-def k_gs_algorithm_prob_2(num_students: int, num_schools: int, preferences: np.ndarray, capacities: np.ndarray, k: int):
-    # Оценка вероятности быть назначенным в каждую школу для каждого ученика при алгоритме k_gs
-    statistic = generate_statistic(num_schools=num_schools, preferences=preferences, k=k)
-    # print(statistic)
-    probabilities = np.zeros((num_students, num_schools))
-
-    for student in range(num_students):
-        for curr_preference in range(k):
-            curr_school = preferences[student, curr_preference]
-            curr_prob = 1 - np.sum(probabilities[student, :curr_school])
-
-            num_competitors = 0
-
-            for curr_step in range(k):
-                avg_capacities = (np.sum(capacities[:curr_school]) / curr_school) * curr_step if curr_school > 0 else 0
-                # print("avg:", np.sum(capacities[:curr_school]), curr_school, curr_step)
-                prev_competitors = np.sum(statistic[:curr_step, :curr_school])
-                if prev_competitors > 0:
-                    prob_assigned = avg_capacities / np.sum(statistic[:curr_step, :curr_school])
-                else:
-                    prob_assigned = 0
-                prob_unassigned = 1 - prob_assigned
-                # print("otl:", curr_step, prob_assigned, prob_unassigned, avg_capacities, np.sum(statistic[:curr_step, :curr_school]), statistic[curr_step, curr_school])
-                num_competitors += prob_unassigned * statistic[curr_step, curr_school]
-
-            # print("fin:", student, curr_school, curr_preference, curr_prob, num_competitors, curr_prob * capacities[curr_school] / num_competitors)
-
-                # num_competitors += (((np.sum(capacities[:curr_school]) / curr_school) * (i - 1)) /
-                #            (np.sum(statistic[:i, :curr_school]))) * statistic[curr_preference, curr_school]
-
-            # prob = min(capacities[curr_school] / compet, 1)
-
-            # if curr_preference > 0:
-            #     # print(student, pref, curr_school)
-            #     curr_competitors = min(capacities[curr_school], np.sum(statistic[:curr_preference, curr_school]))
-            # else:
-            #     curr_competitors = 0
-            probabilities[student][curr_school] = curr_prob * capacities[curr_school] / num_competitors
-
-    # print(probabilities)
-    # print(np.sum(probabilities, axis=1))
-    return probabilities
-
-
-# def k_gs_algorithm_prob_individual(num_students: int, num_schools: int, preferences: np.ndarray,
-#                                    capacities: np.ndarray, k: int, student: int):
-#     # Оценка вероятности быть назначенным в каждую школу для каждого ученика при алгоритме k_gs
-#     statistic = generate_statistic(num_schools=num_schools, preferences=preferences, k=k)
-#     # print(statistic)
-#     probabilities = np.zeros(num_schools)
-#
-#     for curr_preference in range(k):
-#         curr_school = preferences[student, curr_preference]
-#         curr_prob = 1 - np.sum(probabilities[:curr_school])
-#
-#         num_competitors = 0
-#
-#         for curr_step in range(k):
-#             avg_capacities = (np.sum(capacities[:curr_school]) / curr_school) * curr_step if curr_school > 0 else 0
-#             # print("avg:", np.sum(capacities[:curr_school]), curr_school, curr_step)
-#             prev_competitors = np.sum(statistic[:curr_step, :curr_school])
-#             if prev_competitors > 0:
-#                 prob_assigned = avg_capacities / np.sum(statistic[:curr_step, :curr_school])
-#             else:
-#                 prob_assigned = 0
-#             prob_unassigned = 1 - prob_assigned
-#             # print("otl:", curr_step, prob_assigned, prob_unassigned, avg_capacities, np.sum(statistic[:curr_step, :curr_school]), statistic[curr_step, curr_school])
-#             num_competitors += prob_unassigned * statistic[curr_step, curr_school]
-#
-#         # print("fin:", student, curr_school, curr_preference, curr_prob, num_competitors, curr_prob * capacities[curr_school] / num_competitors)
-#
-#         probabilities[curr_school] = curr_prob * capacities[curr_school] / num_competitors
-#
-#     # print(probabilities)
-#     # print(np.sum(probabilities, axis=1))
-#     return probabilities
-
-
 def k_gs_algorithm_prob_individual(num_students: int, num_schools: int, preferences: np.ndarray,
                                    capacities: np.ndarray, k: int, student: int):
     # Оценка вероятности быть назначенным в каждую школу для каждого ученика при алгоритме k_gs
@@ -326,24 +175,6 @@ def k_gs_algorithm_prob_individual(num_students: int, num_schools: int, preferen
     return probabilities
 
 
-# TODO if needed
-def k_boston_algorithm_prob(num_students: int, num_schools: int, preferences: np.ndarray, capacities: np.ndarray, k: int):
-    statistic = generate_statistic(num_schools=num_schools, preferences=preferences, k=k)
-    probabilities = np.zeros((num_students, num_schools))
-
-    for student in range(num_students):
-        for curr_preference in range(k):
-            curr_school = preferences[student, curr_preference]
-            if curr_preference > 0:
-                # print(student, pref, curr_school)
-                curr_competitors = min(capacities[curr_school], np.sum(statistic[:curr_preference, curr_school]))
-            else:
-                curr_competitors = 0
-            probabilities[student][curr_school] = min(capacities[curr_school] / (statistic[curr_preference, curr_school] + curr_competitors), 1)
-
-    return probabilities
-
-
 def manipulation_algorithm(algorithm: str,
                            num_students: int,
                            num_schools: int,
@@ -355,97 +186,11 @@ def manipulation_algorithm(algorithm: str,
                            num_manipulations: int
                            ):
     if algorithm == 'gs':
-        prob_func = k_gs_algorithm_prob_2
-    elif algorithm == 'boston':
-        prob_func = k_boston_algorithm_prob
-    else:
-        raise ValueError('Algorithm must be either "boston" or "gs"')
-
-    preferences = generate_k_restricted_preferences(profiles, k)
-
-    manipulators = np.zeros(num_students)
-    manipulators[fair_indices] = num_manipulations
-    max_num_manipulations = num_manipulations * num_students
-
-    last_manipulation = 1
-
-    while np.sum(manipulators) < max_num_manipulations:
-        if last_manipulation == 0:
-            break
-        else:
-            last_manipulation = 0
-
-        students_for_manipulation = [i for i in range(num_students) if manipulators[i] < num_manipulations]
-
-        curr_probabilities = prob_func(num_students=num_students,
-                                       num_schools=num_schools,
-                                       preferences=preferences,
-                                       capacities=capacities,
-                                       k=k)
-        curr_utilities = calculate_utilities_from_prob(num_students=num_students,
-                                                       num_schools=num_schools,
-                                                       probabilities=curr_probabilities,
-                                                       profiles=profiles)
-
-        # Выбор порядка для манипулирования
-        random.shuffle(students_for_manipulation)
-        order_for_manipulation = students_for_manipulation
-
-        # или
-        # sorted_students = np.argsort(np.array(curr_utilities))
-        # order_for_manipulation = [student for student in sorted_students if student in students_for_manipulation]
-        # last_manipulation = 0
-
-        for student in order_for_manipulation:
-            # print("For print", student)
-            best_manipulation = []
-            best_manipulation_score = 0
-            for new_preference in generate_possible_manipulations(num_schools, preferences[student], k):
-                new_preferences = preferences.copy()
-                new_preferences[student] = new_preference
-
-                new_probabilities = prob_func(num_students=num_students,
-                                              num_schools=num_schools,
-                                              preferences=new_preferences,
-                                              capacities=capacities,
-                                              k=k)
-                new_utilities = calculate_utilities_from_prob(num_students=num_students,
-                                                              num_schools=num_schools,
-                                                              probabilities=new_probabilities,
-                                                              profiles=profiles)
-
-                manipulation_score = new_utilities[student] - curr_utilities[student]
-
-                if manipulation_score > best_manipulation_score and manipulation_score > epsilon:
-                    best_manipulation = new_preference
-                    best_manipulation_score = manipulation_score
-
-            if best_manipulation_score > 0:
-                manipulators[student] += 1
-                last_manipulation = 1
-                preferences[student] = best_manipulation
-                break
-
-    manipulators[fair_indices] = 0
-    return preferences, manipulators
-
-
-def manipulation_algorithm_2(algorithm: str,
-                           num_students: int,
-                           num_schools: int,
-                           profiles: np.ndarray,
-                           capacities: np.ndarray,
-                           k: int,
-                           epsilon: float,
-                           fair_indices: np.ndarray,
-                           num_manipulations: int
-                           ):
-    if algorithm == 'gs':
         prob_func = k_gs_algorithm_prob_individual
-    elif algorithm == 'boston':
-        prob_func = k_boston_algorithm_prob
+    # elif algorithm == 'boston':
+    #     prob_func = k_boston_algorithm_prob
     else:
-        raise ValueError('Algorithm must be either "boston" or "gs"')
+        raise ValueError('Algorithm must be only "gs" now')
 
     preferences = generate_k_restricted_preferences(profiles, k)
 
@@ -561,7 +306,7 @@ if __name__ == '__main__':
     #                       capacities=capacities, k=k)
     # print(p2)
 
-    assignments, unassigned_students = k_gs_algorithm_2(num_students, num_schools, preferences, capacities, k)
+    assignments, unassigned_students = k_gs_algorithm(num_students, num_schools, preferences, capacities, k)
 
     print("assignments", assignments, sep='\n')
     print("unassigned_students", unassigned_students, sep='\n')
