@@ -1,9 +1,9 @@
 import numpy as np
+import random
 from utils import (generate_subsets, generate_k_restricted_preferences, generate_possible_manipulations,
                    calculate_utilities_from_prob, calculate_utilities_from_prob_individual,
                    generate_school_capacities, generate_random_profiles,
                    generate_statistic)
-import random
 
 
 random.seed(42)
@@ -298,19 +298,22 @@ if __name__ == '__main__':
     preferences[3] = np.array([0, 1, 3, 4])
     # print("preferences", preferences, sep='\n')
 
-    # p1 = k_gs_algorithm_prob_2(num_students = num_students, num_schools = num_schools, preferences = preferences,
-    #                       capacities = capacities, k = k)
-    # print(p1)
+    probabilities, unassigned_statistic = algorithm_sampler(
+        algorithm="gs",
+        num_students=num_students,
+        num_schools=num_schools,
+        preferences=preferences,
+        capacities=capacities,
+        k=k,
+        num_repeat=100000,
+    )
+
+    print(probabilities, unassigned_statistic)
+
+    # assignments, unassigned_students = k_gs_algorithm(num_students, num_schools, preferences, capacities, k)
     #
-    # p2 = k_gs_algorithm_prob(num_students=num_students, num_schools=num_schools, preferences=preferences,
-    #                       capacities=capacities, k=k)
-    # print(p2)
-
-    assignments, unassigned_students = k_gs_algorithm(num_students, num_schools, preferences, capacities, k)
-
-    print("assignments", assignments, sep='\n')
-    print("unassigned_students", unassigned_students, sep='\n')
-
+    # print("assignments", assignments, sep='\n')
+    # print("unassigned_students", unassigned_students, sep='\n')
 
     # manipulators_ratio = 1
     # num_fair = round(num_students * (1 - manipulators_ratio))
@@ -346,5 +349,3 @@ if __name__ == '__main__':
     #                                           profiles=profiles)
     #
     # print("true utilities", utilities, sep='\n')
-
-
