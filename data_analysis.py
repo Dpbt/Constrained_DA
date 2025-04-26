@@ -141,7 +141,6 @@ def add_columns_and_save(input_file, output_file):
     # Добавление столбца utility_rating_in_experiment
     df['utility_rating_in_experiment'] = df.groupby('experiment_number')['average_utility'].rank(ascending=False,
                                                                                                  method='dense')
-
     # Сохранение обновленного DataFrame в новый файл
     df.to_csv(output_file, index=False)
 

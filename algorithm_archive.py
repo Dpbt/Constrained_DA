@@ -1,7 +1,7 @@
 import time
 import numpy as np
 from utils import (generate_subsets, generate_k_restricted_preferences, generate_possible_manipulations,
-                   calculate_utilities_from_prob, calculate_utilities_from_prob_individual,
+                   calculate_utilities_from_probs, calculate_utilities_from_probs_individual,
                    generate_school_capacities, generate_random_profiles, generate_statistic)
 import random
 
@@ -319,10 +319,10 @@ def manipulation_algorithm_2(algorithm: str,
                                            capacities=capacities,
                                            k=k,
                                            student=student)
-            curr_utilities = calculate_utilities_from_prob_individual(student=student,
-                                                           num_schools=num_schools,
-                                                           probabilities=curr_probabilities,
-                                                           profiles=profiles)
+            curr_utilities = calculate_utilities_from_probs_individual(student=student,
+                                                                       num_schools=num_schools,
+                                                                       probabilities=curr_probabilities,
+                                                                       profiles=profiles)
 
             # print("For print", student)
             best_manipulation = []
@@ -337,10 +337,10 @@ def manipulation_algorithm_2(algorithm: str,
                                               capacities=capacities,
                                               k=k,
                                               student=student)
-                new_utilities = calculate_utilities_from_prob_individual(student=student,
-                                                              num_schools=num_schools,
-                                                              probabilities=new_probabilities,
-                                                              profiles=profiles)
+                new_utilities = calculate_utilities_from_probs_individual(student=student,
+                                                                          num_schools=num_schools,
+                                                                          probabilities=new_probabilities,
+                                                                          profiles=profiles)
 
                 manipulation_score = new_utilities - curr_utilities
 
@@ -433,7 +433,7 @@ if __name__ == '__main__':
     #
     # print("true probabilities", probabilities, sep='\n')
     #
-    # utilities = calculate_utilities_from_prob(num_students=num_students,
+    # utilities = calculate_utilities_from_probs(num_students=num_students,
     #                                           num_schools=num_schools,
     #                                           probabilities=probabilities,
     #                                           profiles=profiles)

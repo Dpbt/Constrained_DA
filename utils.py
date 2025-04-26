@@ -8,45 +8,167 @@ random.seed(42)
 np.random.seed(42)
 
 
-def generate_random_profiles(num_students: int, num_schools: int):
-    # Генерация случайных предпочтений
+def generate_random_profiles(num_students: int, num_schools: int) -> np.ndarray:
+    """
+    Generates (same ordinal but different cardinal) normalized random preference profiles for students over schools.
+
+    Preferences are generated using uniform random distribution, normalized to sum
+    to 1 for each student, and sorted in descending order.
+
+    Parameters:
+        num_students (int): Number of students to generate preferences for
+        num_schools (int): Number of schools to generate preferences for
+
+    Returns:
+        numpy.ndarray: 2D array of shape (num_students, num_schools) where:
+        - Each row represents a student's preferences
+        - Preferences are normalized (sum to 1)
+        - Preferences are sorted in descending order per student
+
+    Example:
+        > generate_random_profiles(2, 2)
+        np.array([[0.634, 0.366],
+               [0.781, 0.219]])
+    """
     profiles = np.random.rand(num_students, num_schools)
     profiles = profiles / profiles.sum(axis=1, keepdims=True)
     profiles = np.sort(profiles, axis=1)[:, ::-1]
     return profiles
 
 
-def generate_school_capacities(num_students: int, num_schools: int):
-    # мб нужно добавить параметр отвечающий за равномерность распределений
+def generate_school_capacities(num_students: int, num_schools: int) -> np.ndarray:
+    """
+    Generates random school capacities that sum to total number of students.
+
+    Creates non-zero capacities through random partitioning of total student count.
+    Uses sorted random points to split student pool between schools.
+
+    Parameters:
+        num_students (int): Total number of students to distribute
+        num_schools (int): Number of schools requiring capacities
+
+    Returns:
+        np.ndarray: 1D array of shape (num_schools,) containing:
+        - Strictly positive integers (>=1)
+        - Elements sum to num_students
+        - Random distribution between schools
+
+    Example:
+        > generate_school_capacities(100, 4)
+        np.array([24, 31, 22, 23])  # Sum=100
+    """
     capacities = np.random.choice(np.arange(1, num_students), size=num_schools-1, replace=False)
     capacities = np.sort(np.concatenate(([0], capacities, [num_students])))
     capacities = np.diff(capacities)
     return capacities
 
 
-def generate_k_restricted_preferences(profiles: np.ndarray, k: int):
-    preferences = np.argsort(profiles, axis=1)[:, -1:-k-1:-1]
+def generate_k_restricted_preferences(profiles: np.ndarray, k: int) -> np.ndarray:
+    """
+       Generates top-k school preferences from probability distribution profiles.
+
+       Converts preference probabilities to school rankings and selects top-k choices.
+
+       Parameters:
+           profiles (np.ndarray): Matrix of cardinal utility of students from schools
+                                 Shape: (num_students, num_schools)
+           k (int): Number of top preferences to select (1 ≤ k ≤ num_schools)
+
+       Returns:
+           np.ndarray: Integer array of shape (num_students, k) containing
+                      school indices (0-based) sorted by preference strength
+
+       Example:
+           > profiles = generate_random_profiles(4, 3)
+           > generate_k_restricted_preferences(profiles, 2)
+           np.array([[0 1]
+                    [0 1]
+                    [0 1]
+                    [0 1]])
+           # In this case, all students have schools 0 and 1, since generate_random_profiles
+           # returns the same ordinal preferences
+    """
+    preferences = np.argsort(profiles, axis=1)[:, -1 : -k - 1 : -1]
     return preferences
 
 
-def calculate_utility(num_students: int, assignments: dict[int, list[int]], profiles: np.ndarray):
-    student_utility = {i: 0 for i in range(num_students)}
+def calculate_utilities(
+    num_students: int,
+    assignments: dict[int, list[int]],
+    profiles: np.ndarray
+) -> dict[int, float]:
+    """
+    Calculates individual utility for students based on their school assignments.
+
+    Parameters:
+        num_students (int): Total number of students (for result initialization)
+        assignments (dict[int, list[int]]): School assignments {school_id: [student_ids]}
+        profiles (np.ndarray): Preference profiles of students
+                              Shape: (num_students, num_schools), dtype: float
+
+    Returns:
+        dict[int, float]: Mapping {student_id: utility_score} where:
+        - utility_score ∈ [0, 1]
+        - Score represents preference strength for assigned school
+
+    Example:
+        > profiles = np.array([
+        ...     [0.9, 0.1],  # Student 0
+        ...     [0.8, 0.2],  # Student 1
+        ...     [0.7, 0.3]   # Student 2
+        ... ])
+        > assignments = {
+        ...     0: [1, 2],  # School 0 gets students 1 and 2
+        ...     1: [0]      # School 1 gets student 0
+        ... }
+        > calculate_utilities(3, assignments, profiles)
+        {0: 0.1, 1: 0.8, 2: 0.7}
+    """
+    student_utility = {i: 0.0 for i in range(num_students)}
 
     for school_id, students in assignments.items():
         for student in students:
-            student_utility[student] = profiles[student][school_id]
+            student_utility[student] = float(profiles[student, school_id])
 
     return student_utility
 
 
-def calculate_utilities_from_prob(num_students: int, num_schools: int, probabilities: np.ndarray, profiles: np.ndarray):
-    student_utility = np.zeros(num_students)
-    for student in range(num_students):
-        student_utility[student] = np.sum(probabilities[student][:num_schools] * profiles[student])
-    return student_utility
+def calculate_utilities_from_probs(
+    num_students: int,
+    num_schools: int,
+    probabilities: np.ndarray,
+    profiles: np.ndarray
+) -> np.ndarray:
+    """
+    Calculation of expected student utilities using school assignment probabilities.
+
+    Parameters:
+        num_students (int): Total number of students (consistency check)
+        num_schools (int): Number of schools to consider (<= matrix columns)
+        probabilities (NDArray[float64]): Assignment probability matrix
+            Shape: (num_students, num_schools+), each row sums to 1
+        profiles (NDArray[float64]): Preference strength matrix
+            Shape: (num_students, num_schools+), values normalized [0,1]
+
+    Returns:
+        NDArray[float64]: 1D array of expected utilities (shape: num_students)
+
+    Example:
+        > profiles = np.array([
+        ...     [0.9, 0.1, 0.0],  # Student 0 preferences
+        ...     [0.6, 0.3, 0.1]   # Student 1 preferences
+        ... ], dtype=np.float64)
+        > probabilities = np.array([
+        ...     [0.8, 0.2, 0.0],  # Student 0 assignment probs
+        ...     [0.1, 0.7, 0.2]   # Student 1 assignment probs
+        ... ], dtype=np.float64)
+        > calculate_utilities_from_probs(2, 3, probabilities, profiles)
+        array([0.74 0.29])  # 0.9*0.8 + 0.1*0.2 = 0.74 | 0.6*0.1 + 0.3*0.7 + 0.1*0.2= 0.29
+    """
+    return np.sum(probabilities[:, :num_schools] * profiles[:, :num_schools], axis=1)
 
 
-def calculate_utilities_from_prob_individual(student: int, num_schools: int, probabilities: np.ndarray, profiles: np.ndarray):
+def calculate_utilities_from_probs_individual(student: int, num_schools: int, probabilities: np.ndarray, profiles: np.ndarray):
     student_utility = np.sum(probabilities * profiles[student])
     return student_utility
 
@@ -83,13 +205,6 @@ def generate_possible_manipulations(num_schools: int, preferences: np.ndarray, k
                 new_preferences[i] = next_school
                 manipulations.append(np.sort(new_preferences))
                 break
-
-        # for prev_school in range(current_preference - 1, -1, -1):
-        #     if prev_school not in preferences_set:
-        #         new_preferences = preferences.copy()
-        #         new_preferences[i] = prev_school
-        #         manipulations.append(np.sort(new_preferences))
-        #         break  # Прерываем цикл после первой замены
 
     unique_manipulations = np.unique(manipulations, axis=0)
 
@@ -196,7 +311,8 @@ if __name__ == '__main__':
     #                  [0.33333333, 0.33333333, 0.33333333]])
     # profiles = np.array([[0.4365224, 0.29180088, 0.27167672], [0.55439957, 0.4264105, 0.01918993],
     #                      [0.47070475, 0.39570134, 0.13359391]])
-    # print(calculate_utilities_from_prob(3, 3, prob, profiles))
+    # print(calculate_utilities_from_probs(3, 3, prob, profiles))
+    # print(calculate_utilities_from_prob_v2(3, 3, prob, profiles))
 
     # df = pd.read_csv('experiment_results.csv')
     #
@@ -223,6 +339,3 @@ if __name__ == '__main__':
      average_utility_manipulator_students)
 
     print(generate_possible_manipulations(num_schools=4, preferences=np.array([0, 1]), k=2))
-
-
-

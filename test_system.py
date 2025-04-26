@@ -8,7 +8,7 @@ import random
 import os
 
 from utils import (generate_random_profiles, generate_school_capacities, generate_k_restricted_preferences,
-                   calculate_utility, calculate_utilities_from_prob, generate_unassigned_statistic,
+                   calculate_utilities, calculate_utilities_from_probs, generate_unassigned_statistic,
                    group_test_results, generate_tests_from_lists)
 from algorithm import algorithm_sampler, manipulation_algorithm
 from data_analysis import get_n_best_results
@@ -63,10 +63,10 @@ def run_experiment_k(algorithm: str,
                                                               k=k,
                                                               num_repeat=num_repeat_sampler)
 
-    utilities = calculate_utilities_from_prob(num_students=num_students,
-                                              num_schools=num_schools,
-                                              probabilities=probabilities,
-                                              profiles=profiles)
+    utilities = calculate_utilities_from_probs(num_students=num_students,
+                                               num_schools=num_schools,
+                                               probabilities=probabilities,
+                                               profiles=profiles)
 
     return probabilities, utilities, manipulators, unassigned_statistic
 
