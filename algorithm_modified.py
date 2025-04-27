@@ -1,6 +1,6 @@
 import numpy as np
 import random
-from utils import (generate_subsets, generate_k_restricted_preferences, generate_possible_manipulations,
+from utils import (generate_k_restricted_preferences, generate_possible_manipulations,
                    calculate_utilities_from_probs, calculate_utilities_from_probs_individual,
                    generate_school_capacities, generate_random_profiles,
                    generate_statistic)
@@ -241,7 +241,6 @@ def manipulation_algorithm(algorithm: str,
                                            k=k,
                                            student=student)
             curr_utilities = calculate_utilities_from_probs_individual(student=student,
-                                                                       num_schools=num_schools,
                                                                        probabilities=curr_probabilities,
                                                                        profiles=profiles)
 
@@ -258,7 +257,6 @@ def manipulation_algorithm(algorithm: str,
                                               k=k,
                                               student=student)
                 new_utilities = calculate_utilities_from_probs_individual(student=student,
-                                                                          num_schools=num_schools,
                                                                           probabilities=new_probabilities,
                                                                           profiles=profiles)
 

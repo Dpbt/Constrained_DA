@@ -1,6 +1,6 @@
 import time
 import numpy as np
-from utils import (generate_subsets, generate_k_restricted_preferences, generate_possible_manipulations,
+from utils import (generate_k_restricted_preferences, generate_possible_manipulations,
                    calculate_utilities_from_probs, calculate_utilities_from_probs_individual,
                    generate_school_capacities, generate_random_profiles, generate_statistic)
 import random
@@ -320,7 +320,6 @@ def manipulation_algorithm_2(algorithm: str,
                                            k=k,
                                            student=student)
             curr_utilities = calculate_utilities_from_probs_individual(student=student,
-                                                                       num_schools=num_schools,
                                                                        probabilities=curr_probabilities,
                                                                        profiles=profiles)
 
@@ -338,7 +337,6 @@ def manipulation_algorithm_2(algorithm: str,
                                               k=k,
                                               student=student)
                 new_utilities = calculate_utilities_from_probs_individual(student=student,
-                                                                          num_schools=num_schools,
                                                                           probabilities=new_probabilities,
                                                                           profiles=profiles)
 
@@ -356,6 +354,23 @@ def manipulation_algorithm_2(algorithm: str,
 
     manipulators[fair_indices] = 0
     return preferences, manipulators
+
+
+def generate_subsets(nums, k):
+    n = len(nums)
+    result = []
+
+    for i in range(1 << n):
+        subset = []
+        for j in range(n):
+            if (i & (1 << j)) > 0:
+                subset.append(nums[j])
+        if len(subset) == k:
+            result.append(subset)
+
+    return result
+
+
 
 
 if __name__ == '__main__':

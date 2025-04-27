@@ -63,10 +63,7 @@ def run_experiment_k(algorithm: str,
                                                               k=k,
                                                               num_repeat=num_repeat_sampler)
 
-    utilities = calculate_utilities_from_probs(num_students=num_students,
-                                               num_schools=num_schools,
-                                               probabilities=probabilities,
-                                               profiles=profiles)
+    utilities = calculate_utilities_from_probs(num_schools=num_schools, probabilities=probabilities, profiles=profiles)
 
     return probabilities, utilities, manipulators, unassigned_statistic
 
