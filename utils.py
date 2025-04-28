@@ -23,13 +23,18 @@ def generate_random_profiles(num_students: int, num_schools: int) -> np.ndarray:
     to 1 for each student, and sorted in descending order.
 
     Parameters:
-        num_students (int): Number of students to generate preferences for
-        num_schools (int): Number of schools to generate preferences for
+        num_students (int): Total number of students to generate preferences for
+        num_schools (int): Total number of available schools to generate preferences for
 
     Returns:
+        Matrix of cardinal utility of students from schools
+
         numpy.ndarray: 2D array of shape (num_students, num_schools) where:
+
         - Each row represents a student's preferences
+
         - Preferences are normalized (sum to 1)
+
         - Preferences are sorted in descending order per student
 
     Example:
@@ -52,13 +57,18 @@ def generate_school_capacities(num_students: int, num_schools: int) -> np.ndarra
     Uses sorted random points to split student pool between schools.
 
     Parameters:
-        num_students (int): Total number of students to distribute
-        num_schools (int): Number of schools requiring capacities
+        num_students (int): Total number of students
+        num_schools (int): Total number of available schools requiring capacities
 
     Returns:
+        School capacities
+
         np.ndarray: 1D array of shape (num_schools,) containing:
+
         - Strictly positive integers (>=1)
+
         - Elements sum to num_students
+
         - Random distribution between schools
 
     Example:
@@ -112,9 +122,9 @@ def calculate_utilities(
     Calculates individual utility for students based on their school assignments.
 
     Parameters:
-        num_students (int): Total number of students (for result initialization)
+        num_students (int): Total number of students
         assignments (dict[int, list[int]]): School assignments {school_id: [student_ids]}
-        profiles (np.ndarray): Preference profiles of students
+        profiles (np.ndarray): Matrix of cardinal utility of students from schools
                               Shape: (num_students, num_schools), dtype: float
 
     Returns:
@@ -154,10 +164,10 @@ def calculate_utilities_from_probs(
     Calculation of expected utilities for all students using school assignment probabilities.
 
     Parameters:
-        num_schools (int): Number of schools to consider (<= matrix columns)
+        num_schools (int): Total number of available schools
         probabilities (list[float]): Assignment probability matrix
             Shape: (num_students, num_schools+), each row sums to 1
-        profiles (NDArray[float64]): Preference strength matrix
+        profiles (NDArray[float64]): Matrix of cardinal utility of students from schools
             Shape: (num_students, num_schools+), values normalized [0,1]
 
     Returns:
@@ -191,7 +201,7 @@ def calculate_utilities_from_probs_individual(
         student (int): Index of the student (0-based)
         probabilities (list[float]): Assignment probability vector for the student
                                   Shape: (num_schools,) or (num_schools+), sum=1
-        profiles (np.ndarray): Preference matrix from generate_random_profiles()
+        profiles (np.ndarray): Matrix of cardinal utility of students from schools
                              Shape: (num_students, num_schools+)
 
     Returns:
@@ -228,7 +238,7 @@ def generate_possible_manipulations(
         num_schools (int): Total number of available schools
         preferences (np.ndarray): Original preference array (shape: (k,)),
                                  must be sorted in ascending order
-        k (int): Required length of preference lists (k <= num_schools)
+        k (int): Length of preference lists (k <= num_schools)
 
     Returns:
         np.ndarray: Array of unique manipulated preference lists (shape: (m, k)),
@@ -270,15 +280,18 @@ def generate_statistic(num_schools: int, preferences: np.ndarray, k: int) -> np.
     Generates a positional frequency matrix of school preferences across all students.
 
     Parameters:
-        num_schools (int): Total number of schools (columns in output matrix)
+        num_schools (int): Total number of available schools
         preferences (np.ndarray): 2D array of student preferences
                                  Shape: (num_students, k), dtype: integer
-        k (int): Number of ranked positions to consider (rows in output matrix)
+        k (int): Length of preference lists (k <= num_schools)
 
     Returns:
         np.ndarray: Frequency matrix of shape (k, num_schools) where:
+
         - matrix[i, j] = number of times school j appears in position i+1
+
         - Rows represent preference positions (1st, 2nd,...kth choice)
+
         - Columns represent schools
 
     Example:
@@ -308,7 +321,7 @@ def generate_unassigned_statistic(
     Calculate statistics for assigned and unassigned students, comparing fair students and manipulators.
 
     Parameters:
-        num_students (int): Total number of students in the system
+        num_students (int): Total number of students
         fair_indices (np.ndarray): Indices of non-manipulating students (shape: (n,))
         unassigned_statistic (np.ndarray): An array indicating the probability of each student not getting into any school
                                           Shape: (num_students,)
@@ -316,6 +329,7 @@ def generate_unassigned_statistic(
 
     Returns:
         tuple[float, float, float, float, float]: Five metrics:
+
         1. Average % of unassigned students (all)
         2. Average % of unassigned fair students
         3. Average % of unassigned manipulator students
@@ -392,8 +406,11 @@ def group_test_results(df: pd.DataFrame) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: Aggregated results with:
+
             - Original configuration parameters
+
             - Averaged performance metrics
+
             - Sorted by experiment_number, k, and algorithm
     """
     # Configuration parameters for grouping

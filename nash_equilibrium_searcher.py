@@ -19,8 +19,11 @@ def generate_possible_preferences_k_gs(num_schools: int, k: int) -> np.ndarray:
 
     Returns:
         numpy.ndarray: 2D array of shape (C(num_schools, k), k) containing:
+
         - Each row represents a unique school combination
+
         - Combinations are sorted in ascending order
+
         - School indices range from 0 to num_schools-1
 
     Example:
@@ -44,8 +47,11 @@ def generate_possible_preferences_chinese(num_schools: int, k: int) -> np.ndarra
     Generates all possible school preference combinations using sequential k-length blocks.
 
     Creates permutations where:
+
     - Schools are selected in k-length blocks from remaining schools
+
     - Each block is sorted in ascending order
+
     - Process continues until all schools are assigned
 
     Parameters:
@@ -54,8 +60,11 @@ def generate_possible_preferences_chinese(num_schools: int, k: int) -> np.ndarra
 
     Returns:
         numpy.ndarray: 2D array containing all valid preference combinations with:
+
         - Each row representing a complete preference ordering
+
         - Schools grouped in ascending-order blocks
+
         - All schools (0 to num_schools-1) included exactly once per row
 
     Example:
@@ -107,14 +116,17 @@ def generate_symmetric_preferences(
         num_students (int): Total number of students
         num_schools (int): Total number of available schools
         k (int): Block or list constraint size (mechanism dependent)
-        profiles (np.ndarray): Utility profiles matrix (shape: (num_students, num_schools))
+        profiles (np.ndarray): Matrix of utility profiles (shape: (num_students, num_schools))
         get_possible_preferences_func (Callable): Function generating valid school combinations,
             Default: generate_possible_preferences_k_gs
 
     Returns:
         list[np.ndarray]: List of preference matrices where:
+
         - Each matrix has shape (num_students, k)
+
         - Students with identical utilities get identical preferences
+
         - All combinations of group preferences are generated
     """
     # Group students by utility profiles
@@ -145,7 +157,6 @@ def generate_symmetric_preferences(
     return profile_prefs
 
 
-# utils.py ?
 def find_nash_equilibrium(
         results: list[tuple[np.ndarray, np.ndarray]],
         profiles: np.ndarray = None,
@@ -162,14 +173,16 @@ def find_nash_equilibrium(
         results (list): Game outcomes as [(strategy_profile, utilities)] where:
             - strategy_profile: np.ndarray of player choices (shape: (players, strategies))
             - utilities: np.ndarray of corresponding payoffs (shape: (players,))
-        profiles (np.ndarray): Utility profiles matrix (shape: (players, num_utilities))
+        profiles (np.ndarray): Matrix of utility profiles (shape: (players, num_utilities))
             Required when symmetric=True
         symmetric (bool): Restrict to equilibria where identical-utility players
             use identical strategies
 
     Returns:
         list: Nash equilibria as [(strategy_profile, utilities)] where:
+
             - strategy_profile: Tuple of player strategy tuples
+
             - utilities: Corresponding payoff tuple
 
     Raises:
@@ -290,8 +303,11 @@ def all_preferences_test(
     Exhaustively tests all symmetric preference combinations against school permutations.
 
     Conducts full factorial analysis of student-school matching by evaluating:
+
     - All possible symmetric student preference profiles
+
     - Every school preference permutation
+
     - Specified matching algorithm behavior
 
     Parameters:
@@ -299,12 +315,14 @@ def all_preferences_test(
         num_students (int): Total number of students
         k (int): Block or list constraint size (mechanism dependent)
         capacities (np.ndarray): School capacities (shape: (num_schools,))
-        profiles (np.ndarray): Student utility profiles (shape: (num_students, num_schools))
+        profiles (np.ndarray): Matrix of utility profiles (shape: (num_students, num_schools))
         algorithm (AlgorithmEnum): Matching mechanism to test. Available options: AlgorithmEnum.CHINESE_PARALLEL_MECHANISM, AlgorithmEnum.K_GS_MECHANISM
 
     Returns:
         list[tuple[np.ndarray, np.ndarray]]: Test results containing:
+
         - preferences: Generated symmetric preference matrix
+
         - avg_utilities: Average utilities across all school permutations
 
     Raises:
@@ -312,28 +330,37 @@ def all_preferences_test(
 
     Implementation Workflow:
         1. Algorithm Setup:
+
            - Selects appropriate preference generator
+
            - Chooses matching algorithm implementation
         2. Preference Generation:
+
            - Creates symmetric student preference profiles
+
            - Generates all school preference permutations
         3. Matching Simulation:
+
            - Runs algorithm for each (student_pref, school_pref) pair
+
            - Tracks assignment utilities
         4. Result Aggregation:
+
            - Calculates average utilities per preference profile
+
            - Compiles comprehensive test report
     """
     # Algorithm configuration
-    get_possible_preferences_func, algorithm_func = None, None
     if algorithm == AlgorithmEnum.CHINESE_PARALLEL_MECHANISM:
         get_possible_preferences_func = generate_possible_preferences_chinese
         algorithm_func = chinese_parallel_mechanism
-        elif algorithm == AlgorithmEnum.K_GS_MECHANISM:
+    elif algorithm == AlgorithmEnum.K_GS_MECHANISM:
         get_possible_preferences_func = generate_possible_preferences_k_gs
         algorithm_func = k_gs_algorithm
     else:
-        raise ValueError(f"Unknown algorithm {algorithm}")
+        raise ValueError(f"Unsupported algorithm {algorithm}. "
+                         f"Only AlgorithmEnum.K_GS_MECHANISM and "
+                         f"AlgorithmEnum.CHINESE_PARALLEL_MECHANISM are supported now.")
 
     # School preference permutations
     school_preferences_default = [i for i in range(num_students)]

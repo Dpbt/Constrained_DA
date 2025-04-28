@@ -29,15 +29,11 @@ def run_experiment_k(algorithm: AlgorithmEnum,
                      fair_indices: np.ndarray,
                      num_manipulations: int
                      ):
-    # На данный момент считается, что boston только для k = num_schools
-    # Иначе, возможно, надо будет другую схему манипуляций для boston
-
     if algorithm == AlgorithmEnum.BOSTON_MECHANISM:
         preferences = generate_k_restricted_preferences(profiles, num_schools)
         manipulators = [0 for _ in range(num_students)]
 
     elif algorithm == AlgorithmEnum.K_GS_MECHANISM:
-        # Возможно, тут надо еще и это много раз повторять, если внутри manipulation_algorithm есть случайный выбор манипуляции/человека
         preferences, manipulators = manipulation_algorithm(algorithm=AlgorithmEnum.K_GS_MECHANISM,
                                                            num_students=num_students,
                                                            num_schools=num_schools,
@@ -48,7 +44,8 @@ def run_experiment_k(algorithm: AlgorithmEnum,
                                                            fair_indices=fair_indices,
                                                            num_manipulations=num_manipulations)
     else:
-        raise ValueError('Algorithm must be either "boston" or "gs"')
+        raise ValueError(f"Unsupported algorithm {algorithm}. "
+                         f"Only AlgorithmEnum.K_GS_MECHANISM and AlgorithmEnum.BOSTON_MECHANISM are supported now.")
 
     probabilities, unassigned_statistic = algorithm_sampler(algorithm=algorithm,
                                                               num_students=num_students,
@@ -75,7 +72,6 @@ def run_experiment(num_students: int,
                    num_manipulations: int = 3  # 3?
                    ):
     start_time = time.time()
-    # print("Start:", num_students, num_schools, capacities, epsilon, manipulators_ratio, num_manipulations)
     if num_students < num_schools:
         raise ValueError("Number of students cannot be less than the number of schools.")
 
@@ -89,9 +85,6 @@ def run_experiment(num_students: int,
     for profile_number in range(num_repeats_profiles):
         profiles = generate_random_profiles(num_students=num_students, num_schools=num_schools)
 
-        # Если доделать boston для k < num_schools, то добавить цикл для boston (и поменять ужас сколько индексов),
-        # а внутри run_experiment_k переделать отработку boston
-        # boston algorithm
         probabilities, utilities, manipulators, unassigned_statistic = run_experiment_k(
             algorithm=AlgorithmEnum.BOSTON_MECHANISM,
             num_students=num_students,
@@ -146,7 +139,6 @@ def run_experiment(num_students: int,
 
         # gs algorithm
         for k_gs in range(1, num_schools + 1):
-            # print(num_manipulations)
             probabilities, utilities, manipulators, unassigned_statistic = run_experiment_k(
                 algorithm=AlgorithmEnum.K_GS_MECHANISM,
                 num_students=num_students,
@@ -198,8 +190,6 @@ def run_experiment(num_students: int,
 
             gs_df = pd.DataFrame(new_row_gs, index=[0])
             experiment_results.append(gs_df)
-
-    # print("End:", num_students, num_schools, epsilon, manipulators_ratio, num_manipulations, "Time:", time.time() - st)
 
     return experiment_results
 
@@ -279,9 +269,6 @@ def massive_run(tests: list, display_progress: bool = False):
 
 
 def parallel_run(tests: list, batch_size: int = 1, n_jobs: int = 1, display_progress: bool = False):
-    # tests = list(enumerate(tests))
-    # random.shuffle(tests)
-
     num_batch = int(len(tests) / batch_size) if len(tests) % batch_size == 0 else int(len(tests) / batch_size) + 1
     tests_with_batch = [tests[i * batch_size: (i + 1) * batch_size] for i in range(num_batch)]
 
@@ -292,76 +279,3 @@ def parallel_run(tests: list, batch_size: int = 1, n_jobs: int = 1, display_prog
     test_results = pd.concat(results, ignore_index=True)
 
     return test_results
-
-
-if __name__ == '__main__':
-
-    # tests_lists = {
-    #     "num_students": [150],
-    #     "num_schools": [5, 10, 20],
-    #     "num_capacities": [5],
-    #     "num_repeats_profiles": [5],
-    #     "num_repeat_sampler": [50],
-    #     "epsilon": [0.002, 0.005, 0.01, 0.02],
-    #     "manipulators_ratio": [0.25, 0.5, 0.75, 1],
-    #     "num_manipulations": [0.25, 0.5, 0.75, 1],
-    # }
-
-    # tests_lists = {
-    #     "num_students": [100, 200, 300, 400, 500],
-    #     "num_schools": [5, 10, 20],
-    #     "num_capacities": [5],
-    #     "num_repeats_profiles": [5],
-    #     "num_repeat_sampler": [50],
-    #     "epsilon": [0.002, 0.005, 0.01],
-    #     "manipulators_ratio": [0.5, 0.75, 1],
-    #     "num_manipulations": [0.5, 0.75, 1],
-    # }
-
-    tests_lists = {
-        "num_students": [100],
-        "num_schools": [2, 5, 8, 11, 14],
-        "num_capacities": [5],
-        "num_repeats_profiles": [5],
-        "num_repeat_sampler": [50],
-        "epsilon": [0.001, 0.002, 0.005, 0.01],
-        "manipulators_ratio": [0.25, 0.5, 0.75, 1],
-        "num_manipulations": [0.5, 0.75, 1],
-    }
-
-    tests_lists = {
-        "num_students": [100],
-        "num_schools": [5],
-        "num_capacities": [5],
-        "num_repeats_profiles": [5],
-        "num_repeat_sampler": [50],
-        "epsilon": [0.001],
-        "manipulators_ratio": [1],
-        "num_manipulations": [1],
-    }
-
-    tests = generate_tests_from_lists(**tests_lists)
-
-    files = os.listdir('./data_out')
-
-    exp_numbers = []
-    for f in files:
-        if f.startswith('test_results_') and f.endswith('.csv'):
-            number = f.split('_')[-1].replace('.csv', '')
-            exp_numbers.append(int(number))
-
-    tests = [[i, test] for i, test in enumerate(tests) if i not in exp_numbers]
-
-    print(len(tests))
-
-    pd.set_option('display.max_columns', None)
-
-    experiment_results = parallel_run(tests, batch_size=1, n_jobs=-2, display_progress=False)
-
-    experiment_results = experiment_results[
-        ['experiment_number'] + [col for col in experiment_results.columns if col != 'experiment_number']]
-    experiment_results_grouped = group_test_results(experiment_results)
-
-    file_path = './data_out/data_out_100_new_test_2.csv'
-    experiment_results_grouped.to_csv(path_or_buf=file_path, index=False)
-    print(get_n_best_results(file_path=file_path, n=1))
