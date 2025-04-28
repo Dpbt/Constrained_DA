@@ -1,2 +1,2 @@
-# Diplom_1
+# Constrained_DA
 Code for my graduate work
