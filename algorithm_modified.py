@@ -1,6 +1,6 @@
 import numpy as np
 import random
-from utils import (generate_k_restricted_preferences, generate_possible_manipulations,
+from utils import (AlgorithmEnum, generate_k_restricted_preferences, generate_possible_manipulations,
                    calculate_utilities_from_probs, calculate_utilities_from_probs_individual,
                    generate_school_capacities, generate_random_profiles,
                    generate_statistic)
@@ -10,7 +10,7 @@ random.seed(42)
 np.random.seed(42)
 
 
-def algorithm_sampler(algorithm: str, num_students: int, num_schools: int, preferences: np.ndarray, capacities: np.ndarray,
+def algorithm_sampler(algorithm: AlgorithmEnum, num_students: int, num_schools: int, preferences: np.ndarray, capacities: np.ndarray,
                       k: int, num_repeat: int
                       ):
     # Повторяет указанный алгоритм на переданных списках num_repeat раз, возвращает вероятности.
@@ -25,9 +25,11 @@ def algorithm_sampler(algorithm: str, num_students: int, num_schools: int, prefe
 
     student_ranks_iterator = generate_random_permutations(student_rank_default)
 
-    if algorithm == "boston":
+    algorithm_func = None
+
+    if algorithm == AlgorithmEnum.BOSTON_MECHANISM:
         algorithm_func = k_boston_algorithm
-    elif algorithm == 'gs':
+    elif algorithm == AlgorithmEnum.K_GS_MECHANISM:
         algorithm_func = k_gs_algorithm
 
     for i in range(num_repeat):
@@ -158,6 +160,82 @@ def k_gs_algorithm(
     return assignments, unassigned_students
 
 
+def chinese_parallel_mechanism(
+        num_students: int,
+        num_schools: int,
+        preferences: np.ndarray,
+        capacities: np.ndarray,
+        k: int,
+        school_preferences: tuple,
+) -> tuple[dict[int, list[int]], set[int]]:
+    """
+    Реализация китайского параллельного механизма Ch^(k)
+
+    Параметры:
+    - num_students: количество студентов
+    - num_schools: количество школ
+    - preferences: матрица предпочтений студентов (student x school)
+    - capacities: вектор вместимости школ
+    - k: параметр механизма (размер блока)
+    - school_preferences: матрица предпочтений школ (school x student)
+
+    Возвращает:
+    - Словарь {школа: список принятых студентов}
+    """
+    # Инициализация
+    final_assignments = {school: [] for school in range(num_schools)}
+    remaining_students = set(range(num_students))
+    final_assignments_students = set()
+    remaining_capacities = np.copy(capacities)
+    round_num = 0
+
+    while remaining_students and np.sum(remaining_capacities) > 0:
+        # Подготовка предпочтений для текущего раунда
+        curr_prefs = np.full((num_students, k), -1)
+
+        for student in remaining_students:
+            start = round_num * k
+            end = (round_num + 1) * k
+            # Берем текущий блок предпочтений или остаток, если блок меньше k
+            block = preferences[student][start:end]
+            # Если блок меньше k, дополняем -1 (no preference)
+            if len(block) < k:
+                block = np.append(block, [-1] * (k - len(block)))
+            curr_prefs[student] = block
+
+        # Запуск ограниченного алгоритма Гейла-Шепли для текущего раунда
+        round_assignments, unmatched = k_gs_algorithm(
+            num_students=num_students,
+            num_schools=num_schools,
+            preferences=curr_prefs,
+            capacities=remaining_capacities,
+            k=k,
+            school_preferences=school_preferences,
+        )
+
+        # Обновляем финальные назначения и оставшиеся места
+        for school in round_assignments:
+            final_assignments[school].extend(round_assignments[school])
+            remaining_capacities[school] -= len(round_assignments[school])
+
+            for student in round_assignments[school]:
+                final_assignments_students.add(student)
+                if student in remaining_students:
+                    remaining_students.remove(student)
+
+        # Обновляем множество оставшихся студентов
+        for student in unmatched:
+            if student not in final_assignments_students:
+                remaining_students.add(student)
+
+        # Переходим к следующему раунду
+        round_num += 1
+
+    unassigned_students = set()  # always empty for chinese mechanism
+
+    return final_assignments, unassigned_students
+
+
 def k_gs_algorithm_prob_individual(num_students: int, num_schools: int, preferences: np.ndarray,
                                    capacities: np.ndarray, k: int, student: int):
     # Оценка вероятности быть назначенным в каждую школу для ученика при алгоритме k_gs
@@ -190,7 +268,7 @@ def k_gs_algorithm_prob_individual(num_students: int, num_schools: int, preferen
     return probabilities
 
 
-def manipulation_algorithm(algorithm: str,
+def manipulation_algorithm(algorithm: AlgorithmEnum,
                            num_students: int,
                            num_schools: int,
                            profiles: np.ndarray,
@@ -200,7 +278,7 @@ def manipulation_algorithm(algorithm: str,
                            fair_indices: np.ndarray,
                            num_manipulations: int
                            ):
-    if algorithm == 'gs':
+    if algorithm == AlgorithmEnum.K_GS_MECHANISM:
         prob_func = k_gs_algorithm_prob_individual
     # elif algorithm == 'boston':
     #     prob_func = k_boston_algorithm_prob

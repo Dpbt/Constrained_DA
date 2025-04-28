@@ -1,97 +1,24 @@
 import numpy as np
 import itertools
-from enum import Enum, auto
-from algorithm_modified import k_gs_algorithm
+from algorithm_modified import k_gs_algorithm, chinese_parallel_mechanism
+from utils import (AlgorithmEnum)
 
 
-class AlgorithmEnum(Enum):
-    CHINESE_PARALLEL_MECHANISM = auto()
-    K_GS_ALGORITHM = auto()
-
-
-# algorithm_modified.py and algorithm.py
-def chinese_parallel_mechanism(
-        num_students: int,
-        num_schools: int,
-        preferences: np.ndarray,
-        capacities: np.ndarray,
-        k: int,
-        school_preferences: tuple,
-) -> dict[int, list[int]]:
+# utils.py
+def generate_possible_preferences_k_gs(num_schools: int, k: int) -> np.ndarray:
     """
-    Реализация китайского параллельного механизма Ch^(k)
+    Генерирует все возможные комбинации из k школ в порядке возрастания.
 
     Параметры:
-    - num_students: количество студентов
-    - num_schools: количество школ
-    - preferences: матрица предпочтений студентов (student x school)
-    - capacities: вектор вместимости школ
-    - k: параметр механизма (размер блока)
-    - school_preferences: матрица предпочтений школ (school x student)
+    num_schools -- общее количество школ (нумерация с 0)
+    k -- количество школ в предпочтении
 
     Возвращает:
-    - Словарь {школа: список принятых студентов}
+    Массив NumPy формы (C(num_schools, k), k) с отсортированными комбинациями
     """
-    # Инициализация
-    final_assignments = {school: [] for school in range(num_schools)}
-    remaining_students = set(range(num_students))
-    final_assignments_students = set()
-    remaining_capacities = np.copy(capacities)
-    round_num = 0
-
-    while remaining_students and np.sum(remaining_capacities) > 0:
-        # Подготовка предпочтений для текущего раунда
-        # curr_prefs = np.zeros(shape=(num_students, k))
-        curr_prefs = np.full((num_students, k), -1)
-        # print(1, "round_num", round_num, "remaining_students", remaining_students,
-        #       "remaining_capacities", remaining_capacities)
-        for student in remaining_students:
-            start = round_num * k
-            end = (round_num + 1) * k
-            # Берем текущий блок предпочтений или остаток, если блок меньше k
-            block = preferences[student][start:end]
-            # print("student", student, "block", block)
-            # Если блок меньше k, дополняем -1 (no preference)
-            if len(block) < k:
-                block = np.append(block, [-1] * (k - len(block)))
-            curr_prefs[student] = block
-
-        # print("curr_prefs", curr_prefs)
-
-        # Запуск ограниченного алгоритма Гейла-Шепли для текущего раунда
-        round_assignments, unmatched = k_gs_algorithm(
-            num_students=num_students,
-            num_schools=num_schools,
-            preferences=curr_prefs,
-            capacities=remaining_capacities,
-            k=k,
-            school_preferences=school_preferences,
-        )
-
-        # print("round_assignments", round_assignments, "unmatched", unmatched)
-
-        # print("round_assignments", round_assignments)
-
-        # Обновляем финальные назначения и оставшиеся места
-        for school in round_assignments:
-            final_assignments[school].extend(round_assignments[school])
-            remaining_capacities[school] -= len(round_assignments[school])
-
-            for student in round_assignments[school]:
-                final_assignments_students.add(student)
-                if student in remaining_students:
-                    remaining_students.remove(student)
-
-        # Обновляем множество оставшихся студентов
-        for student in unmatched:
-            if student not in final_assignments_students:
-                remaining_students.add(student)
-
-        # Переходим к следующему раунду
-        round_num += 1
-        # print()
-
-    return final_assignments
+    schools = np.arange(num_schools)
+    combinations = list(itertools.combinations(schools, k))
+    return np.array(combinations, dtype=np.int32)
 
 
 # utils.py
@@ -130,20 +57,23 @@ def generate_possible_preferences_chinese(num_schools: int, k: int) -> np.ndarra
 
 
 # utils.py
-def generate_symmetric_preferences(utils: list, num_students: int, k: int) -> list:
+def generate_symmetric_preferences(profiles: list,
+                                   num_students: int,
+                                   k: int,
+                                   get_possible_preferences_func=generate_possible_preferences_chinese) -> list:
     """
     Генерирует профили предпочтений в формате кортежей с массивами NumPy.
     """
-    num_schools = len(utils[0]) if num_students > 0 else 0
+    num_schools = len(profiles[0]) if num_students > 0 else 0
 
     # Группируем учеников по их utils
     groups = {}
     for i in range(num_students):
-        key = tuple(utils[i])
+        key = tuple(profiles[i])
         groups.setdefault(key, []).append(i)
 
     # Генерируем возможные предпочтения для каждой группы
-    possible_preferences = generate_possible_preferences_chinese(num_schools, k)
+    possible_preferences = get_possible_preferences_func(num_schools, k)
     prefs_per_group = {u: possible_preferences for u in groups.keys()}
 
     # Создаём комбинации для уникальных групп
@@ -158,7 +88,8 @@ def generate_symmetric_preferences(utils: list, num_students: int, k: int) -> li
             student_indices = groups[group_keys[group_idx]]
             for student_idx in student_indices:
                 profile[student_idx] = pref_array
-        profile_prefs.append(tuple(np.array(p, dtype=np.int32) for p in profile))
+
+        profile_prefs.append(np.array(profile))
 
     return profile_prefs
 
@@ -315,86 +246,71 @@ def find_symmetric_nash_equilibrium(results: list, player_utils: list):
             nash_equilibria.append((strategy_profile, utility_dict[strategy_profile]))
 
     # Выводим результаты
-    print("Найдены следующие равновесия Нэша:")
-    for profile, utils in nash_equilibria:
-        players_str = ", ".join(
-            f"Player {i + 1}: {strat}" for i, strat in enumerate(profile)
-        )
-        utils_str = ", ".join(f"{u:.2f}" for u in utils)
-        print(f"{players_str} | Utilities: {utils_str}")
+    if not nash_equilibria:
+        print("Не найдены равновесия Нэша.")
+    else:
+        print("Найдены следующие равновесия Нэша:")
+        for profile, utils in nash_equilibria:
+            players_str = ", ".join(
+                f"Player {i + 1}: {strat}" for i, strat in enumerate(profile)
+            )
+            utils_str = ", ".join(f"{u:.2f}" for u in utils)
+            print(f"{players_str} | Utilities: {utils_str}")
 
     return nash_equilibria
 
 
 def all_preferences_test(
-        num_schools,
-        num_students,
-        k,
-        capacities,
-        profiles,
+        num_schools: int,
+        num_students: int,
+        k: int,
+        capacities: np.ndarray,
+        profiles: list,
         algorithm: AlgorithmEnum = AlgorithmEnum.CHINESE_PARALLEL_MECHANISM,
 ):
+    get_possible_preferences_func, algorithm_func = None, None
+
+    if algorithm == AlgorithmEnum.CHINESE_PARALLEL_MECHANISM:
+        get_possible_preferences_func = generate_possible_preferences_chinese
+        algorithm_func = chinese_parallel_mechanism
+
+    elif algorithm == AlgorithmEnum.K_GS_MECHANISM:
+        get_possible_preferences_func = generate_possible_preferences_k_gs
+        algorithm_func = k_gs_algorithm
+
     student_rank_default = [i for i in range(num_students)]
     student_ranks = list(itertools.permutations(student_rank_default))
 
-    profile_prefs = generate_symmetric_preferences(profiles, num_students, k)
-    print(len(profile_prefs))
+    profile_prefs = generate_symmetric_preferences(profiles=profiles,
+                                                   num_students=num_students,
+                                                   k=k,
+                                                   get_possible_preferences_func=get_possible_preferences_func)
 
     results = []
-
-    # algorithm = "chinese_parallel_mechanism"  # или "k_gs_algorithm"
-    # # algorithm = "k_gs_algorithm"
+    school_assignments = None
 
     for i, profile_pref in enumerate(profile_prefs):
         pref_utils = np.zeros(num_students)
-        for student_rank in student_ranks:
-            if algorithm == AlgorithmEnum.CHINESE_PARALLEL_MECHANISM:
-                # Используем китайский параллельный механизм
-                school_assignments = chinese_parallel_mechanism(
-                    num_students=num_students,
-                    num_schools=num_schools,
-                    preferences=np.array(profile_pref),
-                    capacities=capacities,
-                    k=k,
-                    school_preferences=student_rank,
-                )
 
-            elif algorithm == AlgorithmEnum.K_GS_ALGORITHM:
-                profile_pref = np.array(profile_pref)
-                # Используем алгоритм Гейла-Шепли
-                school_assignments, unassigned = k_gs_algorithm(
-                    num_students=num_students,
-                    num_schools=num_schools,
-                    preferences=np.array(profile_pref),
-                    capacities=capacities,
-                    k=k,
-                    school_preferences=student_rank,
-                )
+        for student_rank in student_ranks:
+            school_assignments, unassigned = algorithm_func(
+                num_students=num_students,
+                num_schools=num_schools,
+                preferences=profile_pref,
+                capacities=capacities,
+                k=k,
+                school_preferences=student_rank,
+            )
 
             student_assignments = {}
             for school, students in school_assignments.items():
                 for student in students:
                     student_assignments[student] = school
 
-            if algorithm == AlgorithmEnum.CHINESE_PARALLEL_MECHANISM:
-                curr_utils = np.array(
-                    [
-                        profiles[student][student_assignments[student]]
-                        for student in range(num_students)
-                    ]
-                )
-
-            elif algorithm == AlgorithmEnum.K_GS_ALGORITHM:
-                curr_utils = np.array(
-                    [
-                        (
-                            profiles[student][student_assignments[student]]
-                            if student not in unassigned
-                            else 0
-                        )
-                        for student in range(num_students)
-                    ]
-                )
+            curr_utils = np.array(
+                [(profiles[student][student_assignments[student]]
+                  if student not in unassigned else 0)
+                 for student in range(num_students)])
 
             pref_utils += curr_utils
 
@@ -405,27 +321,36 @@ def all_preferences_test(
 
 
 if __name__ == "__main__":
-    num_schools = 5
-    num_students = 5
-    k = 3
+    num_schools = 4
+    num_students = 4
+    k = 1
     capacities = np.array([1, 1, 1, 1, 1])
 
     # profiles = [[54, 23, 15, 8], [54, 23, 15, 8], [38, 32, 30, 0], [38, 32, 30, 0]]
+
+    # profiles = [
+    #     [50, 40, 5, 3, 2],
+    #     [50, 40, 5, 3, 2],
+    #     [50, 40, 5, 3, 2],
+    #     [50, 40, 5, 3, 2],
+    #     [50, 40, 5, 4, 1],
+    # ]
+
     profiles = [
-        [50, 40, 5, 3, 2],
-        [50, 40, 5, 3, 2],
-        [50, 40, 5, 3, 2],
-        [50, 40, 5, 3, 2],
-        [50, 40, 5, 4, 1],
+        [90, 6, 4, 0],
+        [90, 8, 2, 0],
+        [90, 9, 1, 0],
+        [90, 10, 0, 0],
     ]
 
     results = all_preferences_test(
-        num_schools=5,
-        num_students=5,
-        k=3,
+        num_schools=num_schools,
+        num_students=num_students,
+        k=k,
         capacities=capacities,
         profiles=profiles,
-        algorithm=AlgorithmEnum.CHINESE_PARALLEL_MECHANISM
+        # algorithm=AlgorithmEnum.CHINESE_PARALLEL_MECHANISM,
+        algorithm=AlgorithmEnum.K_GS_MECHANISM,
     )
 
     find_symmetric_nash_equilibrium(results, profiles)

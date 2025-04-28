@@ -2,10 +2,17 @@ import numpy as np
 import pandas as pd
 import itertools
 import random
+from enum import Enum, auto
 
 
 random.seed(42)
 np.random.seed(42)
+
+
+class AlgorithmEnum(Enum):
+    K_GS_MECHANISM = auto()
+    BOSTON_MECHANISM = auto()
+    CHINESE_PARALLEL_MECHANISM = auto()
 
 
 def generate_random_profiles(num_students: int, num_schools: int) -> np.ndarray:
@@ -527,3 +534,4 @@ if __name__ == "__main__":
             num_schools=4, preferences=np.array([0, 1]), k=2
         )
     )
+

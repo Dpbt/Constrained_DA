@@ -7,7 +7,7 @@ import warnings
 import random
 import os
 
-from utils import (generate_random_profiles, generate_school_capacities, generate_k_restricted_preferences,
+from utils import (AlgorithmEnum, generate_random_profiles, generate_school_capacities, generate_k_restricted_preferences,
                    calculate_utilities, calculate_utilities_from_probs, generate_unassigned_statistic,
                    group_test_results, generate_tests_from_lists)
 from algorithm import algorithm_sampler, manipulation_algorithm
@@ -18,13 +18,12 @@ random.seed(42)
 np.random.seed(42)
 
 
-def run_experiment_k(algorithm: str,
+def run_experiment_k(algorithm: AlgorithmEnum,
                      num_students: int,
                      num_schools: int,
                      profiles: np.ndarray,
                      capacities: np.ndarray,
                      num_repeat_sampler: int,
-                     # num_repeat_for_k: int,
                      k: int,
                      epsilon: float,
                      fair_indices: np.ndarray,
@@ -33,17 +32,13 @@ def run_experiment_k(algorithm: str,
     # На данный момент считается, что boston только для k = num_schools
     # Иначе, возможно, надо будет другую схему манипуляций для boston
 
-    # if algorithm == 'boston':
-    #     k = num_schools
-
-    if algorithm == 'boston':
-        k = num_schools
-        preferences = generate_k_restricted_preferences(profiles, k)
+    if algorithm == AlgorithmEnum.BOSTON_MECHANISM:
+        preferences = generate_k_restricted_preferences(profiles, num_schools)
         manipulators = [0 for _ in range(num_students)]
 
-    elif algorithm == 'gs':
+    elif algorithm == AlgorithmEnum.K_GS_MECHANISM:
         # Возможно, тут надо еще и это много раз повторять, если внутри manipulation_algorithm есть случайный выбор манипуляции/человека
-        preferences, manipulators = manipulation_algorithm(algorithm=algorithm,
+        preferences, manipulators = manipulation_algorithm(algorithm=AlgorithmEnum.K_GS_MECHANISM,
                                                            num_students=num_students,
                                                            num_schools=num_schools,
                                                            profiles=profiles,
@@ -98,7 +93,7 @@ def run_experiment(num_students: int,
         # а внутри run_experiment_k переделать отработку boston
         # boston algorithm
         probabilities, utilities, manipulators, unassigned_statistic = run_experiment_k(
-            algorithm="boston",
+            algorithm=AlgorithmEnum.BOSTON_MECHANISM,
             num_students=num_students,
             num_schools=num_schools,
             profiles=profiles,
@@ -153,7 +148,7 @@ def run_experiment(num_students: int,
         for k_gs in range(1, num_schools + 1):
             # print(num_manipulations)
             probabilities, utilities, manipulators, unassigned_statistic = run_experiment_k(
-                algorithm="gs",
+                algorithm=AlgorithmEnum.K_GS_MECHANISM,
                 num_students=num_students,
                 num_schools=num_schools,
                 profiles=profiles,
@@ -213,17 +208,18 @@ def massive_run(tests: list, display_progress: bool = False):
     # Принимает список экспериментов, запускает их параллельно, формирует pd.df
     exp_num = 0
 
-    test_results = pd.DataFrame(columns=["num_students", "num_schools", "average_runtime", "capacities", "capacities_generated",
-                                         "num_capacities", "num_repeats_profiles",
-                                         "num_repeat_sampler", "epsilon", "manipulators_ratio", "default_fair_num_student",
-                                         "num_manipulations",
-                                         "algorithm", "k", "probabilities", "utilities", "average_utility",
-                                         "average_utility_fair_students", "average_utility_manipulator_students",
-                                         "possible_percentage_manipulators", "average_actual_percentage_manipulators",
-                                         "average_number_manipulations",
-                                         "average_percentage_unassigned_students", "average_percentage_unassigned_fair_students",
-                                         "average_percentage_unassigned_manipulator_students",
-                                         ])
+    test_results = pd.DataFrame(
+        columns=["num_students", "num_schools", "average_runtime", "capacities", "capacities_generated",
+                 "num_capacities", "num_repeats_profiles",
+                 "num_repeat_sampler", "epsilon", "manipulators_ratio", "default_fair_num_student",
+                 "num_manipulations",
+                 "algorithm", "k", "probabilities", "utilities", "average_utility",
+                 "average_utility_fair_students", "average_utility_manipulator_students",
+                 "possible_percentage_manipulators", "average_actual_percentage_manipulators",
+                 "average_number_manipulations",
+                 "average_percentage_unassigned_students", "average_percentage_unassigned_fair_students",
+                 "average_percentage_unassigned_manipulator_students",
+                 ])
 
     if display_progress:
         iterator = tqdm(tests, desc="Выполнение тестов")
@@ -252,12 +248,10 @@ def massive_run(tests: list, display_progress: bool = False):
             experiment_results = run_experiment(**params)
             for df in experiment_results:
                 df.insert(0, 'experiment_number', int(exp_number) + 1)
-            experiment_results.append(test_results)
 
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=FutureWarning)
-                test_results = pd.concat(experiment_results, ignore_index=True)
-            # test_results = pd.concat([test_results, experiment_results], ignore_index=True)
+                test_results = pd.concat([test_results, *experiment_results], ignore_index=True)
 
         else:
             params['capacities_generated'] = True
@@ -270,13 +264,13 @@ def massive_run(tests: list, display_progress: bool = False):
                 params['capacities'] = capacities
 
                 experiment_results = run_experiment(**params)
+
                 for df in experiment_results:
                     df.insert(0, 'experiment_number', int(exp_number) + 1)
-                experiment_results.append(test_results)
 
                 with warnings.catch_warnings():
                     warnings.filterwarnings("ignore", category=FutureWarning)
-                    test_results = pd.concat(experiment_results, ignore_index=True)
+                    test_results = pd.concat([test_results, *experiment_results], ignore_index=True)
 
     test_results_grouped = group_test_results(test_results)
     test_results_grouped.to_csv(path_or_buf=f"./data_out/technical/test_results_100_{test_number}.csv", index=False)
@@ -335,6 +329,17 @@ if __name__ == '__main__':
         "num_manipulations": [0.5, 0.75, 1],
     }
 
+    tests_lists = {
+        "num_students": [100],
+        "num_schools": [5],
+        "num_capacities": [5],
+        "num_repeats_profiles": [5],
+        "num_repeat_sampler": [50],
+        "epsilon": [0.001],
+        "manipulators_ratio": [1],
+        "num_manipulations": [1],
+    }
+
     tests = generate_tests_from_lists(**tests_lists)
 
     files = os.listdir('./data_out')
@@ -357,6 +362,6 @@ if __name__ == '__main__':
         ['experiment_number'] + [col for col in experiment_results.columns if col != 'experiment_number']]
     experiment_results_grouped = group_test_results(experiment_results)
 
-    file_path = './data_out/data_out_100_1.csv'
+    file_path = './data_out/data_out_100_new_test_2.csv'
     experiment_results_grouped.to_csv(path_or_buf=file_path, index=False)
     print(get_n_best_results(file_path=file_path, n=1))

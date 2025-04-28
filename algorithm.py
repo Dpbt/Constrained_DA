@@ -1,16 +1,16 @@
 import numpy as np
 import random
-from utils import (generate_k_restricted_preferences, generate_possible_manipulations,
+from utils import (AlgorithmEnum, generate_k_restricted_preferences, generate_possible_manipulations,
                    calculate_utilities_from_probs, calculate_utilities_from_probs_individual,
                    generate_school_capacities, generate_random_profiles,
                    generate_statistic)
-
 
 random.seed(42)
 np.random.seed(42)
 
 
-def algorithm_sampler(algorithm: str, num_students: int, num_schools: int, preferences: np.ndarray, capacities: np.ndarray,
+def algorithm_sampler(algorithm: AlgorithmEnum, num_students: int, num_schools: int, preferences: np.ndarray,
+                      capacities: np.ndarray,
                       k: int, num_repeat: int
                       ):
     # Повторяет указанный алгоритм на переданных списках num_repeat раз, возвращает вероятности.
@@ -18,9 +18,11 @@ def algorithm_sampler(algorithm: str, num_students: int, num_schools: int, prefe
 
     statistic = np.zeros((num_students, num_schools + 1))
 
-    if algorithm == 'boston':
+    algorithm_func = None
+
+    if algorithm == AlgorithmEnum.BOSTON_MECHANISM:
         algorithm_func = k_boston_algorithm
-    elif algorithm == 'gs':
+    elif algorithm == AlgorithmEnum.K_GS_MECHANISM:
         algorithm_func = k_gs_algorithm
 
     for i in range(num_repeat):
@@ -54,7 +56,8 @@ def k_boston_algorithm(num_students: int, num_schools: int, preferences: np.ndar
     for curr_round in range(1, k + 1):
         # print(curr_round, assignments, unassigned_students)
         for school in range(num_schools):
-            current_applicants = [student for student in unassigned_students if preferences[student][curr_round - 1] == school]
+            current_applicants = [student for student in unassigned_students if
+                                  preferences[student][curr_round - 1] == school]
             current_capacity = capacities[school] - len(assignments[school])
 
             if len(current_applicants) <= current_capacity:
@@ -76,13 +79,12 @@ def k_boston_algorithm(num_students: int, num_schools: int, preferences: np.ndar
 
 
 def k_gs_algorithm(
-    num_students: int,
-    num_schools: int,
-    preferences: np.ndarray,
-    capacities: np.ndarray,
-    k: int,
+        num_students: int,
+        num_schools: int,
+        preferences: np.ndarray,
+        capacities: np.ndarray,
+        k: int,
 ) -> tuple[dict[int, list[int]], set[int]]:
-
     preferences_list = preferences.tolist()
     capacities_list = capacities.tolist()
     # Реализация второго алгоритма распределения
@@ -104,8 +106,8 @@ def k_gs_algorithm(
             current_applicants_set = set()
             for student in unassigned_students:
                 if (
-                    curr_student_school[student] <= k
-                    and preferences_list[student][curr_student_school[student] - 1] == school
+                        curr_student_school[student] <= k
+                        and preferences_list[student][curr_student_school[student] - 1] == school
                 ):
                     current_applicants_set.add(student)
 
@@ -175,7 +177,7 @@ def k_gs_algorithm_prob_individual(num_students: int, num_schools: int, preferen
     return probabilities
 
 
-def manipulation_algorithm(algorithm: str,
+def manipulation_algorithm(algorithm: AlgorithmEnum,
                            num_students: int,
                            num_schools: int,
                            profiles: np.ndarray,
@@ -185,7 +187,7 @@ def manipulation_algorithm(algorithm: str,
                            fair_indices: np.ndarray,
                            num_manipulations: int
                            ):
-    if algorithm == 'gs':
+    if algorithm == AlgorithmEnum.K_GS_MECHANISM:
         prob_func = k_gs_algorithm_prob_individual
     # elif algorithm == 'boston':
     #     prob_func = k_boston_algorithm_prob
