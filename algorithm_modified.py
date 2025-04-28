@@ -10,8 +10,13 @@ random.seed(42)
 np.random.seed(42)
 
 
-def algorithm_sampler(algorithm: AlgorithmEnum, num_students: int, num_schools: int, preferences: np.ndarray, capacities: np.ndarray,
-                      k: int, num_repeat: int
+def algorithm_sampler(algorithm: AlgorithmEnum,
+                      num_students: int,
+                      num_schools: int,
+                      preferences: np.ndarray,
+                      capacities: np.ndarray,
+                      k: int,
+                      num_repeat: int
                       ):
     # Повторяет указанный алгоритм на переданных списках num_repeat раз, возвращает вероятности.
     # statistic[:, num_schools] - сколько раз не попали никуда
@@ -236,8 +241,11 @@ def chinese_parallel_mechanism(
     return final_assignments, unassigned_students
 
 
-def k_gs_algorithm_prob_individual(num_students: int, num_schools: int, preferences: np.ndarray,
-                                   capacities: np.ndarray, k: int, student: int):
+def k_gs_algorithm_prob_individual(num_schools: int,
+                                   preferences: np.ndarray,
+                                   capacities: np.ndarray,
+                                   k: int,
+                                   student: int):
     # Оценка вероятности быть назначенным в каждую школу для ученика при алгоритме k_gs
     statistic = generate_statistic(num_schools=num_schools, preferences=preferences, k=k)
     probabilities = [0 for _ in range(num_schools)]
@@ -312,8 +320,7 @@ def manipulation_algorithm(algorithm: AlgorithmEnum,
 
         for student in order_for_manipulation:
 
-            curr_probabilities = prob_func(num_students=num_students,
-                                           num_schools=num_schools,
+            curr_probabilities = prob_func(num_schools=num_schools,
                                            preferences=preferences,
                                            capacities=capacities,
                                            k=k,
@@ -328,8 +335,7 @@ def manipulation_algorithm(algorithm: AlgorithmEnum,
                 new_preferences = preferences.copy()
                 new_preferences[student] = new_preference
 
-                new_probabilities = prob_func(num_students=num_students,
-                                              num_schools=num_schools,
+                new_probabilities = prob_func(num_schools=num_schools,
                                               preferences=new_preferences,
                                               capacities=capacities,
                                               k=k,
@@ -371,7 +377,7 @@ if __name__ == '__main__':
     # print("preferences", preferences, sep='\
 
     probabilities, unassigned_statistic = algorithm_sampler(
-        algorithm="gs",
+        algorithm=AlgorithmEnum.K_GS_MECHANISM,
         num_students=num_students,
         num_schools=num_schools,
         preferences=preferences,

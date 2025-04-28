@@ -2,6 +2,7 @@ import numpy as np
 import itertools
 from algorithm_modified import k_gs_algorithm, chinese_parallel_mechanism
 from utils import (AlgorithmEnum)
+from typing import Callable
 
 
 # utils.py
@@ -57,15 +58,15 @@ def generate_possible_preferences_chinese(num_schools: int, k: int) -> np.ndarra
 
 
 # utils.py
-def generate_symmetric_preferences(profiles: list,
-                                   num_students: int,
+def generate_symmetric_preferences(num_students: int,
+                                   num_schools: int,
                                    k: int,
-                                   get_possible_preferences_func=generate_possible_preferences_chinese) -> list:
+                                   profiles: np.ndarray,
+                                   get_possible_preferences_func: Callable[[int, int], np.ndarray]
+                                   = generate_possible_preferences_chinese) -> list:
     """
     Генерирует профили предпочтений в формате кортежей с массивами NumPy.
     """
-    num_schools = len(profiles[0]) if num_students > 0 else 0
-
     # Группируем учеников по их utils
     groups = {}
     for i in range(num_students):
@@ -94,10 +95,25 @@ def generate_symmetric_preferences(profiles: list,
     return profile_prefs
 
 
-# utils.py ?
-def find_nash_equilibrium(results: list):
-    # Создаем словарь полезностей
+# utils.py
+def find_nash_equilibrium(
+        results: list[tuple[np.ndarray, np.ndarray]],
+        profiles: np.ndarray = None,
+        symmetric: bool = False
+) -> list[tuple[tuple[tuple[int, ...], ...], tuple[float, ...]]]:
+    """
+    Finds Nash equilibria (symmetric or all) in strategic games.
+
+    Parameters:
+    results -- list of tuples (strategy_profile, utilities)
+    profiles -- np.ndarray of players utility profiles (for symmetric=True)
+    symmetric -- flag to search only for symmetric equilibria
+
+    Returns:
+    List of tuples (strategy_profile, utilities)
+    """
     utility_dict = {}
+    # Create utility dictionary
     for pref, utils in results:
         strategy_profile = tuple(
             tuple(int(x) for x in player_strategy) for player_strategy in pref
@@ -105,155 +121,94 @@ def find_nash_equilibrium(results: list):
         utilities = tuple(float(u) for u in utils)
         utility_dict[strategy_profile] = utilities
 
-    # Определяем количество игроков
+    # Determine number of players
     num_players = len(next(iter(utility_dict.keys())))
-
-    # Собираем уникальные стратегии для каждого игрока
     players_strategies = []
+
+    # Collect unique strategies for each player
     for player_idx in range(num_players):
         strategies = {tuple(int(x) for x in pref[player_idx]) for pref, _ in results}
         players_strategies.append(list(strategies))
 
-    # Функция проверки равновесия Нэша
-    def is_nash_equilibrium(strategy_profile):
-        current_utilities = utility_dict[strategy_profile]
-
-        for player_idx in range(num_players):
-            # Сравниваем с альтернативными стратегиями текущего игрока
-            for candidate_strategy in players_strategies[player_idx]:
-                if candidate_strategy == strategy_profile[player_idx]:
-                    continue
-
-                # Создаем новый профиль стратегий
-                new_profile = list(strategy_profile)
-                new_profile[player_idx] = candidate_strategy
-                new_profile = tuple(new_profile)
-
-                # Проверяем улучшение полезности
-                if new_profile not in utility_dict:
-                    continue
-                if (
-                        utility_dict[new_profile][player_idx]
-                        > current_utilities[player_idx]
-                ):
-                    return False
-                # if (
-                #     utility_dict[new_profile][player_idx]
-                #     > current_utilities[player_idx]
-                # ):
-                #     return False
-        return True
-
-    # Генерируем все возможные профили стратегий
-    nash_equilibria = []
-    for strategy_profile in itertools.product(*players_strategies):
-        if strategy_profile in utility_dict and is_nash_equilibrium(strategy_profile):
-            nash_equilibria.append((strategy_profile, utility_dict[strategy_profile]))
-
-    # Выводим результаты
-    print("Найдены следующие равновесия Нэша:")
-    for profile, utils in nash_equilibria:
-        players_str = ", ".join(
-            f"Player {i + 1}: {strat}" for i, strat in enumerate(profile)
-        )
-        utils_str = ", ".join(f"{u:.2f}" for u in utils)
-        print(f"{players_str} | Utilities: {utils_str}")
-
-    return nash_equilibria
-
-
-# utils.py ?
-def find_symmetric_nash_equilibrium(results: list, player_utils: list):
-    """
-    player_utils: список utility-профилей для каждого игрока [[79,16,4,1], [79,16,4,1], ...]
-    """
-    # Создаем словарь полезностей для профилей стратегий
-    utility_dict = {}
-    for pref, utils in results:
-        strategy_profile = tuple(
-            tuple(int(x) for x in player_strategy) for player_strategy in pref
-        )
-        utilities = tuple(float(u) for u in utils)
-        utility_dict[strategy_profile] = utilities
-
-    # Группируем игроков по их utility-профилям
+    # Player grouping logic (for symmetric case only)
     utils_groups = {}
-    for player_idx, utils in enumerate(player_utils):
-        key = tuple(utils)
-        utils_groups.setdefault(key, []).append(player_idx)
+    if symmetric:
+        if profiles is None:
+            raise ValueError("profiles parameter is required when symmetric=True")
 
-    # Собираем уникальные стратегии для каждого игрока
-    players_strategies = []
-    num_players = len(next(iter(utility_dict.keys())))
-    for player_idx in range(num_players):
-        strategies = {tuple(int(x) for x in pref[player_idx]) for pref, _ in results}
-        players_strategies.append(list(strategies))
+        for player_idx, prefs in enumerate(profiles):
+            key = tuple(int(x) for x in prefs)
+            utils_groups.setdefault(key, []).append(player_idx)
 
-    # Функция проверки равновесия Нэша с групповыми отклонениями
     def is_nash_equilibrium(strategy_profile):
+        """Check Nash equilibrium conditions"""
         current_utilities = utility_dict[strategy_profile]
 
-        # Проверяем для каждой группы игроков
-        for group_indices in utils_groups.values():
-            # Текущая стратегия группы (должна быть одинаковой у всех)
-            group_strategy = strategy_profile[group_indices[0]]
+        if symmetric:
+            # Check group deviations
+            for group_indices in utils_groups.values():
+                group_strategy = strategy_profile[group_indices[0]]
 
-            # Проверяем, что все в группе используют одинаковую стратегию
-            if any(strategy_profile[i] != group_strategy for i in group_indices):
-                continue  # Пропускаем если стратегии разные
-
-            # Перебираем возможные альтернативные стратегии для группы
-            for candidate_strategy in players_strategies[group_indices[0]]:
-                if candidate_strategy == group_strategy:
-                    continue  # Пропускаем текущую стратегию
-
-                # Создаем новый профиль стратегий
-                new_profile = list(strategy_profile)
-                for i in group_indices:
-                    new_profile[i] = candidate_strategy
-                new_profile = tuple(new_profile)
-
-                # Проверяем существование профиля
-                if new_profile not in utility_dict:
+                if any(strategy_profile[i] != group_strategy for i in group_indices):
                     continue
 
-                # Проверяем улучшение для ВСЕХ игроков группы
-                all_improved = all(
-                    utility_dict[new_profile][i] > current_utilities[i]
-                    for i in group_indices
-                )
+                for candidate_strategy in players_strategies[group_indices[0]]:
+                    if candidate_strategy == group_strategy:
+                        continue
 
-                if all_improved:
-                    return False
+                    # Create new strategy profile
+                    new_profile = list(strategy_profile)
+                    for i in group_indices:
+                        new_profile[i] = candidate_strategy
+                    new_profile = tuple(new_profile)
 
+                    if new_profile not in utility_dict:
+                        continue
+
+                    if all(utility_dict[new_profile][i] > current_utilities[i] for i in group_indices):
+                        return False
+        else:
+            # Standard check for all players
+            for player_idx in range(num_players):
+                for candidate_strategy in players_strategies[player_idx]:
+                    if candidate_strategy == strategy_profile[player_idx]:
+                        continue
+
+                    new_profile = list(strategy_profile)
+                    new_profile[player_idx] = candidate_strategy
+                    new_profile = tuple(new_profile)
+
+                    if new_profile not in utility_dict:
+                        continue
+
+                    if utility_dict[new_profile][player_idx] > current_utilities[player_idx]:
+                        return False
         return True
 
-    # Генерируем профили стратегий с учетом групповых ограничений
+    # Generate strategy profiles considering symmetry
     nash_equilibria = []
     for strategy_profile in itertools.product(*players_strategies):
         if strategy_profile not in utility_dict:
             continue
 
-        # Проверяем чтобы внутри групп стратегии совпадали
+        # Verify strategy consistency within groups
         valid_profile = True
-        for group_indices in utils_groups.values():
-            group_strategies = [strategy_profile[i] for i in group_indices]
-            if len(set(group_strategies)) != 1:
-                valid_profile = False
-                break
+        if symmetric:
+            for group_indices in utils_groups.values():
+                if len({strategy_profile[i] for i in group_indices}) != 1:
+                    valid_profile = False
+                    break
 
         if valid_profile and is_nash_equilibrium(strategy_profile):
             nash_equilibria.append((strategy_profile, utility_dict[strategy_profile]))
 
-    # Выводим результаты
+    # Format output
     if not nash_equilibria:
-        print("Не найдены равновесия Нэша.")
+        print("No Nash equilibria found.")
     else:
-        print("Найдены следующие равновесия Нэша:")
+        print(f"Found {len(nash_equilibria)} Nash equilibria ({'symmetric' if symmetric else 'all types'}):")
         for profile, utils in nash_equilibria:
-            players_str = ", ".join(
-                f"Player {i + 1}: {strat}" for i, strat in enumerate(profile)
-            )
+            players_str = ", ".join(f"Player {i + 1}: {strat}" for i, strat in enumerate(profile))
             utils_str = ", ".join(f"{u:.2f}" for u in utils)
             print(f"{players_str} | Utilities: {utils_str}")
 
@@ -265,7 +220,7 @@ def all_preferences_test(
         num_students: int,
         k: int,
         capacities: np.ndarray,
-        profiles: list,
+        profiles: np.ndarray,
         algorithm: AlgorithmEnum = AlgorithmEnum.CHINESE_PARALLEL_MECHANISM,
 ):
     get_possible_preferences_func, algorithm_func = None, None
@@ -278,28 +233,28 @@ def all_preferences_test(
         get_possible_preferences_func = generate_possible_preferences_k_gs
         algorithm_func = k_gs_algorithm
 
-    student_rank_default = [i for i in range(num_students)]
-    student_ranks = list(itertools.permutations(student_rank_default))
+    school_preferences_default = [i for i in range(num_students)]
+    school_preferences = list(itertools.permutations(school_preferences_default))
 
-    profile_prefs = generate_symmetric_preferences(profiles=profiles,
-                                                   num_students=num_students,
-                                                   k=k,
-                                                   get_possible_preferences_func=get_possible_preferences_func)
+    all_symmetric_preferences = generate_symmetric_preferences(num_students=num_students,
+                                                               k=k,
+                                                               num_schools=num_schools,
+                                                               profiles=profiles,
+                                                               get_possible_preferences_func=get_possible_preferences_func)
 
     results = []
-    school_assignments = None
 
-    for i, profile_pref in enumerate(profile_prefs):
-        pref_utils = np.zeros(num_students)
+    for i, preferences in enumerate(all_symmetric_preferences):
+        preferences_utils = np.zeros(num_students)
 
-        for student_rank in student_ranks:
+        for school_preference in school_preferences:
             school_assignments, unassigned = algorithm_func(
                 num_students=num_students,
                 num_schools=num_schools,
-                preferences=profile_pref,
+                preferences=preferences,
                 capacities=capacities,
                 k=k,
-                school_preferences=student_rank,
+                school_preferences=school_preference,
             )
 
             student_assignments = {}
@@ -312,36 +267,59 @@ def all_preferences_test(
                   if student not in unassigned else 0)
                  for student in range(num_students)])
 
-            pref_utils += curr_utils
+            preferences_utils += curr_utils
 
-        pref_utils /= len(student_ranks)
-        results.append((profile_pref, pref_utils))
+        preferences_utils /= len(school_preferences)
+        results.append((preferences, preferences_utils))
 
     return results
 
 
+def get_type_structure(obj) -> str:
+    if isinstance(obj, list):
+        if not obj: return "List[Any]"
+        return f"List[{get_type_structure(obj[0])}]"
+
+    elif isinstance(obj, tuple):
+        types = ", ".join(get_type_structure(x) for x in obj)
+        return f"Tuple[{types}]"
+
+    elif isinstance(obj, dict):
+        if not obj: return "Dict[Any, Any]"
+        key_type = get_type_structure(next(iter(obj.keys())))
+        val_type = get_type_structure(next(iter(obj.values())))
+        return f"Dict[{key_type}, {val_type}]"
+
+    return type(obj).__name__
+
+
 if __name__ == "__main__":
-    num_schools = 4
-    num_students = 4
-    k = 1
-    capacities = np.array([1, 1, 1, 1, 1])
+    # num_schools = 4
+    # num_students = 4
+    # k = 2
+    # capacities = np.array([1, 1, 1, 1, 1])
 
-    # profiles = [[54, 23, 15, 8], [54, 23, 15, 8], [38, 32, 30, 0], [38, 32, 30, 0]]
+    profiles = np.array([[54, 23, 15, 8], [54, 23, 15, 8], [38, 32, 30, 0], [38, 32, 30, 0]])
 
-    # profiles = [
+    # profiles = np.array([
     #     [50, 40, 5, 3, 2],
     #     [50, 40, 5, 3, 2],
     #     [50, 40, 5, 3, 2],
     #     [50, 40, 5, 3, 2],
     #     [50, 40, 5, 4, 1],
-    # ]
+    # ])
 
-    profiles = [
-        [90, 6, 4, 0],
-        [90, 8, 2, 0],
-        [90, 9, 1, 0],
-        [90, 10, 0, 0],
-    ]
+    # profiles = np.array([
+    #     [90, 6, 4, 0],
+    #     [90, 8, 2, 0],
+    #     [90, 9, 1, 0],
+    #     [90, 10, 0, 0],
+    # ])
+
+    num_schools = profiles.shape[1]
+    num_students = profiles.shape[0]
+    k = 2
+    capacities = np.array([1 for _ in range(num_schools)])
 
     results = all_preferences_test(
         num_schools=num_schools,
@@ -353,4 +331,4 @@ if __name__ == "__main__":
         algorithm=AlgorithmEnum.K_GS_MECHANISM,
     )
 
-    find_symmetric_nash_equilibrium(results, profiles)
+    find_nash_equilibrium(results=results, profiles=profiles, symmetric=True)

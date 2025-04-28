@@ -5,6 +5,7 @@ from utils import (AlgorithmEnum, generate_k_restricted_preferences, generate_po
                    generate_school_capacities, generate_random_profiles,
                    generate_statistic)
 
+
 random.seed(42)
 np.random.seed(42)
 
@@ -137,7 +138,7 @@ def k_gs_algorithm(
     return assignments, unassigned_students
 
 
-def k_gs_algorithm_prob_individual(num_students: int, num_schools: int, preferences: np.ndarray,
+def k_gs_algorithm_prob_individual(num_schools: int, preferences: np.ndarray,
                                    capacities: np.ndarray, k: int, student: int):
     # Оценка вероятности быть назначенным в каждую школу для каждого ученика при алгоритме k_gs
     statistic = generate_statistic(num_schools=num_schools, preferences=preferences, k=k)
@@ -221,8 +222,7 @@ def manipulation_algorithm(algorithm: AlgorithmEnum,
 
         for student in order_for_manipulation:
 
-            curr_probabilities = prob_func(num_students=num_students,
-                                           num_schools=num_schools,
+            curr_probabilities = prob_func(num_schools=num_schools,
                                            preferences=preferences,
                                            capacities=capacities,
                                            k=k,
@@ -238,8 +238,7 @@ def manipulation_algorithm(algorithm: AlgorithmEnum,
                 new_preferences = preferences.copy()
                 new_preferences[student] = new_preference
 
-                new_probabilities = prob_func(num_students=num_students,
-                                              num_schools=num_schools,
+                new_probabilities = prob_func(num_schools=num_schools,
                                               preferences=new_preferences,
                                               capacities=capacities,
                                               k=k,
