@@ -34,8 +34,9 @@ def generate_random_profiles(num_students: int, num_schools: int) -> np.ndarray:
 
     Example:
         > generate_random_profiles(2, 2)
+
         np.array([[0.634, 0.366],
-               [0.781, 0.219]])
+                  [0.781, 0.219]])
     """
     profiles = np.random.rand(num_students, num_schools)
     profiles = profiles / profiles.sum(axis=1, keepdims=True)
@@ -62,6 +63,7 @@ def generate_school_capacities(num_students: int, num_schools: int) -> np.ndarra
 
     Example:
         > generate_school_capacities(100, 4)
+
         np.array([24, 31, 22, 23])  # Sum=100
     """
     capacities = np.random.choice(
@@ -89,11 +91,13 @@ def generate_k_restricted_preferences(profiles: np.ndarray, k: int) -> np.ndarra
 
     Example:
         > profiles = generate_random_profiles(4, 3)
+
         > generate_k_restricted_preferences(profiles, 2)
+
         np.array([[0 1]
-                 [0 1]
-                 [0 1]
-                 [0 1]])
+                  [0 1]
+                  [0 1]
+                  [0 1]])
         # In this case, all students have schools 0 and 1, since generate_random_profiles
         # returns the same ordinal preferences
     """
@@ -120,15 +124,18 @@ def calculate_utilities(
 
     Example:
         > profiles = np.array([
-        ...     [0.9, 0.1],  # Student 0
-        ...     [0.8, 0.2],  # Student 1
-        ...     [0.7, 0.3]   # Student 2
-        ... ])
+             [0.9, 0.1],  # Student 0 \n
+             [0.8, 0.2],  # Student 1 \n
+             [0.7, 0.3]   # Student 2
+          ])
+
         > assignments = {
-        ...     0: [1, 2],  # School 0 gets students 1 and 2
-        ...     1: [0]      # School 1 gets student 0
-        ... }
+             0: [1, 2],  # School 0 gets students 1 and 2 \n
+             1: [0]      # School 1 gets student 0
+          }
+
         > calculate_utilities(3, assignments, profiles)
+
         {0: 0.1, 1: 0.8, 2: 0.7}
     """
     student_utility = {i: 0.0 for i in range(num_students)}
@@ -158,15 +165,18 @@ def calculate_utilities_from_probs(
 
     Example:
         > profiles = np.array([
-        ...     [0.9, 0.1, 0.0],  # Student 0 preferences
-        ...     [0.6, 0.3, 0.1]   # Student 1 preferences
-        ... ], dtype=np.float64)
+             [0.9, 0.1, 0.0],  # Student 0 preferences \n
+             [0.6, 0.3, 0.1]   # Student 1 preferences
+        ], dtype=np.float64)
+
         > probabilities = np.array([
-        ...     [0.8, 0.2, 0.0],  # Student 0 assignment probs
-        ...     [0.1, 0.7, 0.2]   # Student 1 assignment probs
-        ... ], dtype=np.float64)
+             [0.8, 0.2, 0.0],  # Student 0 assignment probs \n
+             [0.1, 0.7, 0.2]   # Student 1 assignment probs
+         ], dtype=np.float64)
+
         > calculate_utilities_from_probs(2, 3, probabilities, profiles)
-        array([0.74 0.29])  # 0.9*0.8 + 0.1*0.2 = 0.74 | 0.6*0.1 + 0.3*0.7 + 0.1*0.2= 0.29
+
+        np.array([0.74 0.29])  # 0.9*0.8 + 0.1*0.2 = 0.74 | 0.6*0.1 + 0.3*0.7 + 0.1*0.2= 0.29
     """
     return np.sum(probabilities[:, :num_schools] * profiles[:, :num_schools], axis=1)
 
@@ -189,11 +199,14 @@ def calculate_utilities_from_probs_individual(
 
     Example:
         > profiles = np.array([
-        ...     [0.9, 0.1],  # Student 0
-        ...     [0.6, 0.4]   # Student 1
-        ... ])
+             [0.9, 0.1],  # Student 0 \n
+             [0.6, 0.4]   # Student 1
+        ])
+
         > probabilities = np.array([0.8, 0.2])  # Probabilities for student 0
+
         > calculate_utilities_from_probs_individual(0, 2, probs, profiles)
+
         0.74  # 0.9*0.8 + 0.1*0.2 = 0.74
     """
     return np.sum(probabilities * profiles[student])
@@ -226,9 +239,11 @@ def generate_possible_manipulations(
 
     Example:
         > prefs = np.array([0, 1])
+
         > generate_possible_manipulations(3, prefs, 2)
-        array([[0, 2],
-               [1, 2]])
+
+        np.array([[0, 2],
+                  [1, 2]])
     """
     if len(preferences) != k or not np.all(np.diff(preferences) > 0):
         raise ValueError("Preferences must be a sorted array of length k.")
@@ -268,9 +283,11 @@ def generate_statistic(num_schools: int, preferences: np.ndarray, k: int) -> np.
 
     Example:
         > preferences = np.array([[0, 1], [1, 0], [0, 2]], dtype=int)
+
         > generate_statistic(3, preferences, 2)
-        array([[2., 1., 0.],  # Position 1 counts: school0(2), school1(1)
-               [1., 1., 1.]]) # Position 2 counts: school0(1), school1(1), school2(1)
+
+        np.array([[2., 1., 0.],  # Position 1 counts: school0(2), school1(1) \n
+                  [1., 1., 1.]]) # Position 2 counts: school0(1), school1(1), school2(1)
     """
     statistic = np.zeros((k, num_schools))
 
@@ -307,10 +324,15 @@ def generate_unassigned_statistic(
 
     Example:
         > num_students = 4
+
         > fair_indices = np.array([0, 1])
+
         > unassigned = np.array([1, 0, 1, 0])  # Students 0/2 unassigned
+
         > utilities = np.array([0.0, 0.8, 0.0, 0.6])
+
         > generate_unassigned_statistic(num_students, fair_indices, unassigned, utilities)
+
         (50.0, 50.0, 50.0, 0.4, 0.3)  # 50% overall, 50% fair, 50% manipulators, utilities 0.4 for fair and 0.3 for manipulators
     """
     fair_mask = np.zeros(num_students, dtype=bool)
@@ -445,10 +467,11 @@ def generate_tests_from_lists(**param_lists) -> list[dict]:
 
     Example:
         > generate_tests_from_lists(
-        ...     num_students=[100, 200],
-        ...     num_schools=[5],
-        ...     num_manipulations=[0.2]
-        ... )
+             num_students=[100, 200], \n
+             num_schools=[5], \n
+             num_manipulations=[0.2]
+          )
+
         [{'num_students': 100, 'num_schools': 5, 'num_manipulations': 1},
          {'num_students': 200, 'num_schools': 5, 'num_manipulations': 1}]
 
