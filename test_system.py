@@ -7,12 +7,12 @@ import warnings
 import random
 import os
 
-from utils import (AlgorithmEnum, generate_random_profiles, generate_school_capacities, generate_k_restricted_preferences,
+from utils import (AlgorithmEnum, generate_random_profiles, generate_school_capacities,
+                   generate_k_restricted_preferences,
                    calculate_utilities, calculate_utilities_from_probs, generate_unassigned_statistic,
                    group_test_results, generate_tests_from_lists)
 from algorithm import algorithm_sampler, manipulation_algorithm
 from data_analysis import get_n_best_results
-
 
 random.seed(42)
 np.random.seed(42)
@@ -47,13 +47,16 @@ def run_experiment_k(algorithm: AlgorithmEnum,
         raise ValueError(f"Unsupported algorithm {algorithm}. "
                          f"Only AlgorithmEnum.K_GS_MECHANISM and AlgorithmEnum.BOSTON_MECHANISM are supported now.")
 
+    # preferences_full = np.full(shape=(num_students, num_schools), fill_value=-1, dtype=int)
+    # preferences_full[:, :k] = preferences
+
     probabilities, unassigned_statistic = algorithm_sampler(algorithm=algorithm,
-                                                              num_students=num_students,
-                                                              num_schools=num_schools,
-                                                              preferences=preferences,
-                                                              capacities=capacities,
-                                                              k=k,
-                                                              num_repeat=num_repeat_sampler)
+                                                            num_students=num_students,
+                                                            num_schools=num_schools,
+                                                            preferences=preferences,
+                                                            capacities=capacities,
+                                                            k=k,
+                                                            num_repeat=num_repeat_sampler)
 
     utilities = calculate_utilities_from_probs(num_schools=num_schools, probabilities=probabilities, profiles=profiles)
 
@@ -126,10 +129,12 @@ def run_experiment(num_students: int,
                           "average_number_manipulations": [np.sum(manipulators)],
                           "possible_percentage_manipulators": [
                               (num_students - round(num_students * (1 - manipulators_ratio))) / num_students * 100],
-                          "average_actual_percentage_manipulators": [np.count_nonzero(manipulators) / num_students * 100],
+                          "average_actual_percentage_manipulators": [
+                              np.count_nonzero(manipulators) / num_students * 100],
                           "average_percentage_unassigned_students": [average_percentage_unassigned_students],
                           "average_percentage_unassigned_fair_students": [average_percentage_unassigned_fair_students],
-                          "average_percentage_unassigned_manipulator_students": [average_percentage_unassigned_manipulator_students],
+                          "average_percentage_unassigned_manipulator_students": [
+                              average_percentage_unassigned_manipulator_students],
                           "average_utility_fair_students": [average_utility_fair_students],
                           "average_utility_manipulator_students": [average_utility_manipulator_students]
                           }
@@ -180,10 +185,12 @@ def run_experiment(num_students: int,
                           "average_number_manipulations": [np.sum(manipulators)],
                           "possible_percentage_manipulators": [
                               (num_students - round(num_students * (1 - manipulators_ratio))) / num_students * 100],
-                          "average_actual_percentage_manipulators": [np.count_nonzero(manipulators) / num_students * 100],
+                          "average_actual_percentage_manipulators": [
+                              np.count_nonzero(manipulators) / num_students * 100],
                           "average_percentage_unassigned_students": [average_percentage_unassigned_students],
                           "average_percentage_unassigned_fair_students": [average_percentage_unassigned_fair_students],
-                          "average_percentage_unassigned_manipulator_students": [average_percentage_unassigned_manipulator_students],
+                          "average_percentage_unassigned_manipulator_students": [
+                              average_percentage_unassigned_manipulator_students],
                           "average_utility_fair_students": [average_utility_fair_students],
                           "average_utility_manipulator_students": [average_utility_manipulator_students]
                           }
@@ -250,7 +257,8 @@ def massive_run(tests: list, display_progress: bool = False):
             else:
                 params['num_capacities'] = 1
             for capacities_index in range(params['num_capacities']):
-                capacities = generate_school_capacities(num_students=test['num_students'], num_schools=test['num_schools'])
+                capacities = generate_school_capacities(num_students=test['num_students'],
+                                                        num_schools=test['num_schools'])
                 params['capacities'] = capacities
 
                 experiment_results = run_experiment(**params)

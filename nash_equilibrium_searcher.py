@@ -1,6 +1,6 @@
 import numpy as np
 import itertools
-from algorithm_modified import k_gs_algorithm, chinese_parallel_mechanism
+from algorithm import k_gs_algorithm, chinese_parallel_mechanism
 from utils import AlgorithmEnum
 from typing import Callable
 
@@ -319,10 +319,8 @@ def all_preferences_test(
         algorithm (AlgorithmEnum): Matching mechanism to test. Available options: AlgorithmEnum.CHINESE_PARALLEL_MECHANISM, AlgorithmEnum.K_GS_MECHANISM
 
     Returns:
-        list[tuple[np.ndarray, np.ndarray]]: Test results containing:
-
+        list[tuple[np.ndarray, np.ndarray]]:
         - preferences: Generated symmetric preference matrix
-
         - avg_utilities: Average utilities across all school permutations
 
     Raises:
@@ -381,13 +379,14 @@ def all_preferences_test(
 
         # Test against all school preference orders
         for school_preference in school_preferences:
+            school_preference_dict = {student: rank for rank, student in enumerate(school_preference)}
             school_assignments, unassigned = algorithm_func(
                 num_students=num_students,
                 num_schools=num_schools,
                 preferences=preferences,
                 capacities=capacities,
                 k=k,
-                school_preferences=school_preference,
+                school_preferences=school_preference_dict,
             )
 
             # Calculate individual utilities
@@ -416,15 +415,15 @@ if __name__ == "__main__":
     # k = 2
     # capacities = np.array([1, 1, 1, 1, 1])
 
-    profiles = np.array([[54, 23, 15, 8], [54, 23, 15, 8], [38, 32, 30, 0], [38, 32, 30, 0]])
+    # profiles = np.array([[54, 23, 15, 8], [54, 23, 15, 8], [38, 32, 30, 0], [38, 32, 30, 0]])
 
-    # profiles = np.array([
-    #     [50, 40, 5, 3, 2],
-    #     [50, 40, 5, 3, 2],
-    #     [50, 40, 5, 3, 2],
-    #     [50, 40, 5, 3, 2],
-    #     [50, 40, 5, 4, 1],
-    # ])
+    profiles = np.array([
+        [50, 40, 5, 3, 2],
+        [50, 40, 5, 3, 2],
+        [50, 40, 5, 3, 2],
+        [50, 40, 5, 3, 2],
+        [50, 40, 5, 4, 1],
+    ])
 
     # profiles = np.array([
     #     [90, 6, 4, 0],
@@ -435,7 +434,7 @@ if __name__ == "__main__":
 
     num_schools = profiles.shape[1]
     num_students = profiles.shape[0]
-    k = 2
+    k = 3
     capacities = np.array([1 for _ in range(num_schools)])
 
     results = all_preferences_test(
@@ -444,8 +443,8 @@ if __name__ == "__main__":
         k=k,
         capacities=capacities,
         profiles=profiles,
-        # algorithm=AlgorithmEnum.CHINESE_PARALLEL_MECHANISM,
-        algorithm=AlgorithmEnum.K_GS_MECHANISM,
+        algorithm=AlgorithmEnum.CHINESE_PARALLEL_MECHANISM,
+        # algorithm=AlgorithmEnum.K_GS_MECHANISM,
     )
 
     find_nash_equilibrium(results=results, profiles=profiles, symmetric=True)

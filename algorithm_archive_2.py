@@ -10,71 +10,95 @@ random.seed(42)
 np.random.seed(42)
 
 
-def algorithm_sampler(algorithm: AlgorithmEnum,
-                      num_students: int,
-                      num_schools: int,
-                      preferences: np.ndarray,
-                      capacities: np.ndarray,
-                      k: int,
-                      num_repeat: int
-                      ):
-    # Повторяет указанный алгоритм на переданных списках num_repeat раз, возвращает вероятности.
-    # statistic[:, num_schools] - сколько раз не попали никуда
-
-    statistic = np.zeros((num_students, num_schools + 1))
-
-    student_rank_default = list(range(num_students))
-    def generate_random_permutations(elements):
-        while True:
-            yield random.sample(elements, len(elements))
-
-    student_ranks_iterator = generate_random_permutations(student_rank_default)
-
-    algorithm_func = None
-
-    if algorithm == AlgorithmEnum.BOSTON_MECHANISM:
-        algorithm_func = k_boston_algorithm
-    elif algorithm == AlgorithmEnum.K_GS_MECHANISM:
-        algorithm_func = k_gs_algorithm
-
-    for i in range(num_repeat):
-        current_school_preferences = next(student_ranks_iterator)
-
-        assignments, unassigned_students = algorithm_func(num_students=num_students,
-                                                          num_schools=num_schools,
-                                                          preferences=preferences,
-                                                          capacities=capacities,
-                                                          k=k,
-                                                          school_preferences=current_school_preferences)
-
-        for school_key in assignments:
-            for student in assignments[school_key]:
-                statistic[student, school_key] += 1
-
-        for student in unassigned_students:
-            statistic[student, num_schools] += 1
-
-    probabilities = statistic / num_repeat
-    unassigned_statistic = statistic[:, num_schools] / num_repeat
-
-    return probabilities, unassigned_statistic
-
-
-def k_boston_algorithm(
+def algorithm_sampler(
+    algorithm: AlgorithmEnum,
     num_students: int,
     num_schools: int,
     preferences: np.ndarray,
     capacities: np.ndarray,
     k: int,
-    school_preferences: tuple
-) -> tuple[dict[int, list[int]], set[int]]:
+    num_repeat: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Performs multiple simulations of the selected mechanism for the preference lists submitted by students.
+    Calculates the probabilities of assigning each student to each school,
+    and the probability of each student not being assigned to a school.
+
+    Parameters:
+        algorithm (AlgorithmEnum): Matching mechanism to test (BOSTON_MECHANISM/K_GS_MECHANISM)
+        num_students (int): Total number of students
+        num_schools (int): Total number of available schools
+        preferences (np.ndarray): Student preference matrix (shape: (num_students, k))
+        capacities (np.ndarray): School capacities (shape: (num_schools,))
+        k (int): Length of preference lists (k <= num_schools)
+        num_repeat (int): Number of iterations of algorithm repetition to average the results
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: Two probability matrices:
+
+        - Assignment probabilities (shape: (num_students, num_schools + 1))
+
+        - Unassignment probabilities (shape: (num_students,))
+
+    Raises:
+        ValueError: If unknown algorithm type provided
+
+    Implementation Notes:
+        1. Randomization Process:
+            - Implicit in algorithm_func (requires external permutation handling)
+        2. Statistics Collection:
+            - Tracks school assignments in first num_schools columns
+            - Records unassignments in last column
+        3. Probability Calculation:
+            - Normalizes counts by num_repeat
+            - Maintains separate unassignment statistics
+    """
+    statistic = np.zeros((num_students, num_schools + 1))
+
+    # Algorithm Selection
+    if algorithm == AlgorithmEnum.BOSTON_MECHANISM:
+        algorithm_func = k_boston_algorithm
+    elif algorithm == AlgorithmEnum.K_GS_MECHANISM:
+        algorithm_func = k_gs_algorithm
+    else:
+        raise ValueError(f"Unsupported algorithm {algorithm}. "
+                         f"Only AlgorithmEnum.K_GS_MECHANISM and "
+                         f"AlgorithmEnum.BOSTON_MECHANISM are supported now.")
+
+    # Simulation Loop
+    for _ in range(num_repeat):
+        assignments, unassigned = algorithm_func(
+            num_students=num_students,
+            num_schools=num_schools,
+            preferences=preferences,
+            capacities=capacities,
+            k=k
+        )
+
+        # Update Statistics
+        for school, students in assignments.items():
+            for student in students:
+                statistic[student, school] += 1
+        for student in unassigned:
+            statistic[student, num_schools] += 1
+
+    # Normalization
+    probabilities = statistic / num_repeat
+    unassigned_probs = statistic[:, num_schools] / num_repeat
+
+    return probabilities, unassigned_probs
+
+
+def k_boston_algorithm(num_students: int, num_schools: int, preferences: np.ndarray, capacities: np.ndarray, k: int
+                       ) -> tuple[dict[int, list[int]], set[int]]:
     assignments = {school: [] for school in range(num_schools)}
     unassigned_students = set(range(num_students))
 
     for curr_round in range(1, k + 1):
         # print(curr_round, assignments, unassigned_students)
         for school in range(num_schools):
-            current_applicants = [student for student in unassigned_students if preferences[student][curr_round - 1] == school]
+            current_applicants = [student for student in unassigned_students if
+                                  preferences[student][curr_round - 1] == school]
             current_capacity = capacities[school] - len(assignments[school])
 
             if len(current_applicants) <= current_capacity:
@@ -83,12 +107,7 @@ def k_boston_algorithm(
                     unassigned_students.remove(student)
 
             else:
-                sorted_current_applicants_list = sorted(
-                    list(current_applicants), key=lambda x: school_preferences[x]
-                )
-                students_to_assign = sorted_current_applicants_list[: capacities[school]]
-
-                # students_to_assign = np.random.choice(current_applicants, size=current_capacity, replace=False)
+                students_to_assign = np.random.choice(current_applicants, size=current_capacity, replace=False)
                 assignments[school].extend(students_to_assign)
                 for student in students_to_assign:
                     unassigned_students.remove(student)
@@ -101,16 +120,15 @@ def k_boston_algorithm(
 
 
 def k_gs_algorithm(
-    num_students: int,
-    num_schools: int,
-    preferences: np.ndarray,
-    capacities: np.ndarray,
-    k: int,
-    school_preferences: tuple
+        num_students: int,
+        num_schools: int,
+        preferences: np.ndarray,
+        capacities: np.ndarray,
+        k: int,
 ) -> tuple[dict[int, list[int]], set[int]]:
-
     preferences_list = preferences.tolist()
     capacities_list = capacities.tolist()
+    # Реализация второго алгоритма распределения
     assignments = {school: set() for school in range(num_schools)}
     unassigned_students = set(range(num_students))
     curr_student_school = [0] * num_students
@@ -129,8 +147,8 @@ def k_gs_algorithm(
             current_applicants_set = set()
             for student in unassigned_students:
                 if (
-                    curr_student_school[student] <= k
-                    and preferences_list[student][curr_student_school[student] - 1] == school
+                        curr_student_school[student] <= k
+                        and preferences_list[student][curr_student_school[student] - 1] == school
                 ):
                     current_applicants_set.add(student)
 
@@ -143,15 +161,10 @@ def k_gs_algorithm(
             else:
                 curr_assignments = assignments[school]
                 all_current_applicants = curr_assignments.union(current_applicants_set)
+                all_current_applicants_list = list(all_current_applicants)
 
-                sorted_current_applicants_list = sorted(
-                    list(all_current_applicants), key=lambda x: school_preferences[x]
-                )
-                students_to_assign = sorted_current_applicants_list[: capacities[school]]
-
-                # random.shuffle(all_current_applicants_list)
-                # students_to_assign = all_current_applicants_list[:capacities_list[school]]
-
+                random.shuffle(all_current_applicants_list)
+                students_to_assign = all_current_applicants_list[:capacities_list[school]]
                 students_to_assign_set = set(students_to_assign)
 
                 assignments[school] = students_to_assign_set
@@ -165,13 +178,53 @@ def k_gs_algorithm(
     return assignments, unassigned_students
 
 
+def k_gs_algorithm_prob_individual(num_schools: int, preferences: np.ndarray,
+                                   capacities: np.ndarray, k: int, student: int):
+    # Оценка вероятности быть назначенным в каждую школу для каждого ученика при алгоритме k_gs
+    statistic = generate_statistic(num_schools=num_schools, preferences=preferences, k=k)
+    # print(statistic)
+    # probabilities = np.zeros(num_schools)
+    probabilities = [0 for _ in range(num_schools)]
+
+    curr_sum = 0
+
+    for curr_preference in range(k):
+        curr_school = preferences[student, curr_preference]
+        # curr_prob = 1 - np.sum(probabilities[:curr_school])
+        curr_prob = 1 - curr_sum
+
+        num_competitors = 0
+
+        for curr_step in range(k):
+            avg_capacities = (np.sum(capacities[:curr_school]) / curr_school) * curr_step if curr_school > 0 else 0
+            # print("avg:", np.sum(capacities[:curr_school]), curr_school, curr_step)
+            curr_stats = np.sum(statistic[:curr_step, :curr_school])
+
+            if curr_stats > 0:
+                prob_assigned = avg_capacities / curr_stats
+            else:
+                prob_assigned = 0
+            prob_unassigned = 1 - prob_assigned
+            # print("otl:", curr_step, prob_assigned, prob_unassigned, avg_capacities, np.sum(statistic[:curr_step, :curr_school]), statistic[curr_step, curr_school])
+            num_competitors += prob_unassigned * statistic[curr_step, curr_school]
+
+        # print("fin:", student, curr_school, curr_preference, curr_prob, num_competitors, curr_prob * capacities[curr_school] / num_competitors)
+        final_prob = curr_prob * capacities[curr_school] / num_competitors
+        probabilities[curr_school] = final_prob
+        curr_sum += final_prob
+
+    # print(probabilities)
+    # print(np.sum(probabilities, axis=1))
+    return probabilities
+
+
 def chinese_parallel_mechanism(
         num_students: int,
         num_schools: int,
         preferences: np.ndarray,
         capacities: np.ndarray,
         k: int,
-        school_preferences: tuple,
+        school_preferences: dict[int, int],
 ) -> tuple[dict[int, list[int]], set[int]]:
     """
     Реализация китайского параллельного механизма Ch^(k)
@@ -224,7 +277,7 @@ def chinese_parallel_mechanism(
             remaining_capacities[school] -= len(round_assignments[school])
 
             for student in round_assignments[school]:
-                final_assignments_students.add(student)
+                # final_assignments_students.add(student)
                 if student in remaining_students:
                     remaining_students.remove(student)
 
@@ -239,41 +292,6 @@ def chinese_parallel_mechanism(
     unassigned_students = set()  # always empty for chinese mechanism
 
     return final_assignments, unassigned_students
-
-
-def k_gs_algorithm_prob_individual(num_schools: int,
-                                   preferences: np.ndarray,
-                                   capacities: np.ndarray,
-                                   k: int,
-                                   student: int):
-    # Оценка вероятности быть назначенным в каждую школу для ученика при алгоритме k_gs
-    statistic = generate_statistic(num_schools=num_schools, preferences=preferences, k=k)
-    probabilities = [0 for _ in range(num_schools)]
-
-    curr_sum = 0
-
-    for curr_preference in range(k):
-        curr_school = preferences[student, curr_preference]
-        curr_prob = 1 - curr_sum
-
-        num_competitors = 0
-
-        for curr_step in range(k):
-            avg_capacities = (np.sum(capacities[:curr_school]) / curr_school) * curr_step if curr_school > 0 else 0
-            curr_stats = np.sum(statistic[:curr_step, :curr_school])
-
-            if curr_stats > 0:
-                prob_assigned = avg_capacities / curr_stats
-            else:
-                prob_assigned = 0
-            prob_unassigned = 1 - prob_assigned
-            num_competitors += prob_unassigned * statistic[curr_step, curr_school]
-
-        final_prob = curr_prob * capacities[curr_school] / num_competitors
-        probabilities[curr_school] = final_prob
-        curr_sum += final_prob
-
-    return probabilities
 
 
 def manipulation_algorithm(algorithm: AlgorithmEnum,
@@ -329,6 +347,7 @@ def manipulation_algorithm(algorithm: AlgorithmEnum,
                                                                        probabilities=curr_probabilities,
                                                                        profiles=profiles)
 
+            # print("For print", student)
             best_manipulation = []
             best_manipulation_score = 0
             for new_preference in generate_possible_manipulations(num_schools, preferences[student], k):
@@ -361,6 +380,23 @@ def manipulation_algorithm(algorithm: AlgorithmEnum,
 
 
 if __name__ == '__main__':
+    # start_time = time.time()
+    # preferences = np.array([[0, 1], [0, 1], [0, 2]])
+    # assignments, unassigned_students = k_gs_algorithm(num_students=3,
+    #                                                   num_schools=3,
+    #                                                   preferences=preferences,
+    #                                                   capacities=np.array([1, 1, 1]),
+    #                                                   k=2)
+    #
+    # print(assignments)
+    # print(unassigned_students)
+    # print(time.time() - start_time)
+
+    # preferences = np.array([[0, 1, 2], [0, 1, 2], [1, 0, 2]])
+    # probabilities = k_gs_algorithm_prob(3, 3, preferences, np.array([1, 1, 1]), 3)
+    #
+    # print(probabilities)
+
     num_students = 10
     num_schools = 5
     k = 4
@@ -369,21 +405,22 @@ if __name__ == '__main__':
     capacities = generate_school_capacities(num_students=num_students, num_schools=num_schools)
     print("capacities", capacities, sep='\n')
     preferences = generate_k_restricted_preferences(profiles, k)
+    # print("preferences", preferences, sep='\n')
 
     preferences[0] = np.array([1, 2, 3, 4])
     preferences[1] = np.array([1, 2, 3, 4])
     preferences[2] = np.array([0, 2, 3, 4])
     preferences[3] = np.array([0, 1, 3, 4])
-    # print("preferences", preferences, sep='\
+    # print("preferences", preferences, sep='\n')
 
     probabilities, unassigned_statistic = algorithm_sampler(
-        algorithm=AlgorithmEnum.K_GS_MECHANISM,
+        algorithm="gs",
         num_students=num_students,
         num_schools=num_schools,
         preferences=preferences,
         capacities=capacities,
         k=k,
-        num_repeat=10000,
+        num_repeat=100000,
     )
 
     print(probabilities, unassigned_statistic)
@@ -416,7 +453,7 @@ if __name__ == '__main__':
     #                                                                           preferences=preferences,
     #                                                                           capacities=capacities,
     #                                                                           k=k,
-    #                                                                           num_repeat=10000
+    #                                                                           num_repeat=1000
     #                                                                           )
     #
     # print("true probabilities", probabilities, sep='\n')

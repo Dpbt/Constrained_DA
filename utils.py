@@ -4,7 +4,6 @@ import itertools
 import random
 from enum import Enum, auto
 
-
 random.seed(42)
 np.random.seed(42)
 
@@ -111,12 +110,12 @@ def generate_k_restricted_preferences(profiles: np.ndarray, k: int) -> np.ndarra
         # In this case, all students have schools 0 and 1, since generate_random_profiles
         # returns the same ordinal preferences
     """
-    preferences = np.argsort(profiles, axis=1)[:, -1 : -k - 1 : -1]
+    preferences = np.argsort(profiles, axis=1)[:, -1: -k - 1: -1]
     return preferences
 
 
 def calculate_utilities(
-    num_students: int, assignments: dict[int, list[int]], profiles: np.ndarray
+        num_students: int, assignments: dict[int, list[int]], profiles: np.ndarray
 ) -> dict[int, float]:
     """
     Calculates individual utility for students based on their school assignments.
@@ -158,7 +157,7 @@ def calculate_utilities(
 
 
 def calculate_utilities_from_probs(
-    num_schools: int, probabilities: list[float], profiles: np.ndarray
+        num_schools: int, probabilities: list[float], profiles: np.ndarray
 ) -> np.ndarray:
     """
     Calculation of expected utilities for all students using school assignment probabilities.
@@ -192,7 +191,7 @@ def calculate_utilities_from_probs(
 
 
 def calculate_utilities_from_probs_individual(
-    student: int, probabilities: list[float], profiles: np.ndarray
+        student: int, probabilities: list[float], profiles: np.ndarray
 ) -> float:
     """
     Calculate expected utility for a single student using school assignment probabilities.
@@ -223,7 +222,7 @@ def calculate_utilities_from_probs_individual(
 
 
 def generate_possible_manipulations(
-    num_schools: int, preferences: np.ndarray, k: int
+        num_schools: int, preferences: np.ndarray, k: int
 ) -> np.ndarray:
     """
     Generates possible preference manipulations by upgrading one school choice per position.
@@ -312,10 +311,10 @@ def generate_statistic(num_schools: int, preferences: np.ndarray, k: int) -> np.
 
 
 def generate_unassigned_statistic(
-    num_students: int,
-    fair_indices: np.ndarray,
-    unassigned_statistic: np.ndarray,
-    utilities: np.ndarray,
+        num_students: int,
+        fair_indices: np.ndarray,
+        unassigned_statistic: np.ndarray,
+        utilities: np.ndarray,
 ) -> tuple[float, float, float, float, float]:
     """
     Calculate statistics for assigned and unassigned students, comparing fair students and manipulators.
@@ -457,7 +456,7 @@ def group_test_results(df: pd.DataFrame) -> pd.DataFrame:
     grouped_df = grouped_df[
         ["experiment_number"]
         + [col for col in grouped_df.columns if col != "experiment_number"]
-    ]
+        ]
 
     # Sorting logic
     grouped_df = grouped_df.sort_values(
@@ -574,4 +573,3 @@ if __name__ == "__main__":
             num_schools=4, preferences=np.array([0, 1]), k=2
         )
     )
-
