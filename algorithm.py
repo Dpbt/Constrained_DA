@@ -448,7 +448,7 @@ def k_gs_algorithm_prob_individual(num_schools: int,
                                    preferences: np.ndarray,
                                    capacities: np.ndarray,
                                    k: int,
-                                   student: int):
+                                   student: int) -> list[float]:
     """
         Estimates the probabilities of assigning a student in a constrained Deferred Acceptance mechanism
         based on the statistics of the distribution of schools by place on student preference lists.
@@ -541,7 +541,7 @@ def _find_optimal_manipulation(
     return best_manipulation, best_manipulation_gain
 
 
-def manipulation_algorithm_new(
+def manipulation_algorithm(
         algorithm: AlgorithmEnum,
         num_students: int,
         num_schools: int,

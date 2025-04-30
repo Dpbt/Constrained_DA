@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import itertools
 import random
+import time
 from enum import Enum, auto
 
 random.seed(42)
@@ -157,7 +158,7 @@ def calculate_utilities(
 
 
 def calculate_utilities_from_probs(
-        num_schools: int, probabilities: list[float], profiles: np.ndarray
+        num_schools: int, probabilities: np.ndarray, profiles: np.ndarray
 ) -> np.ndarray:
     """
     Calculation of expected utilities for all students using school assignment probabilities.
@@ -426,6 +427,7 @@ def group_test_results(df: pd.DataFrame) -> pd.DataFrame:
         "num_manipulations",
         "algorithm",
         "k",
+        "k_to_schools_ratio",
         "possible_percentage_manipulators",
     ]
 
@@ -510,6 +512,47 @@ def generate_tests_from_lists(**param_lists) -> list[dict]:
         result.append(dict_item)
 
     return result
+
+
+def make_result_row_run_experiment(
+        num_students, num_schools, start_time, capacities, capacities_generated, num_capacities,
+        num_repeats_profiles, num_repeat_sampler, epsilon, manipulators_ratio, num_manipulations,
+        algorithm, k, probabilities, utilities, manipulators,
+        avg_unassigned_total, avg_unassigned_fair, avg_unassigned_manipulator,
+        avg_utility_fair, avg_utility_manipulator
+) -> dict[str, list]:
+    """
+    Forms a row for the dataframe in run_experiment
+    """
+    num_fair = round(num_students * (1 - manipulators_ratio))
+    return {
+        "num_students": [num_students],
+        "num_schools": [num_schools],
+        "average_runtime": [time.time() - start_time],
+        "capacities": [capacities],
+        "capacities_generated": [capacities_generated],
+        "num_capacities": [num_capacities],
+        "num_repeats_profiles": [num_repeats_profiles],
+        "num_repeat_sampler": [num_repeat_sampler],
+        "epsilon": [epsilon],
+        "manipulators_ratio": [manipulators_ratio],
+        "default_fair_num_student": [num_fair],
+        "num_manipulations": [num_manipulations],
+        "algorithm": [algorithm],
+        "k": [k],
+        "k_to_schools_ratio": [round(k / num_schools, 3)],
+        "probabilities": [probabilities],
+        "utilities": [utilities],
+        "average_utility": [np.sum(utilities) / num_students],
+        "average_number_manipulations": [np.sum(manipulators)],
+        "possible_percentage_manipulators": [(num_students - num_fair) / num_students * 100],
+        "average_actual_percentage_manipulators": [np.count_nonzero(manipulators) / num_students * 100],
+        "average_percentage_unassigned_students": [avg_unassigned_total],
+        "average_percentage_unassigned_fair_students": [avg_unassigned_fair],
+        "average_percentage_unassigned_manipulator_students": [avg_unassigned_manipulator],
+        "average_utility_fair_students": [avg_utility_fair],
+        "average_utility_manipulator_students": [avg_utility_manipulator]
+    }
 
 
 if __name__ == "__main__":

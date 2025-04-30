@@ -107,7 +107,6 @@ def filter_dataframe_by_conditions(file_path, output_file, filters):
 
 def get_n_best_results(file_path: str, n=1):
     df = pd.read_csv(file_path)
-    df["k_to_schools_ratio"] = df["k"] / df["num_schools"]
     grouped = df.groupby("experiment_number").apply(
         lambda x: x.nlargest(n, "average_utility")
     )
@@ -124,19 +123,15 @@ def get_n_best_results(file_path: str, n=1):
             "k_to_schools_ratio",
         ]
     ]
-    result["k_to_schools_ratio"] = result["k_to_schools_ratio"].round(3)
 
     best_k_to_schools_ratio_mean = result["k_to_schools_ratio"].mean()
 
     return result, best_k_to_schools_ratio_mean
 
 
-def add_columns_and_save(input_file, output_file):
+def add_utility_rating_in_experiment_column(input_file, output_file):
     # Чтение DataFrame из файла
     df = pd.read_csv(input_file)
-
-    # Добавление столбца k_to_schools_ratio
-    df['k_to_schools_ratio'] = df['k'] / df['num_schools']
 
     # Добавление столбца utility_rating_in_experiment
     df['utility_rating_in_experiment'] = df.groupby('experiment_number')['average_utility'].rank(ascending=False,
@@ -242,7 +237,7 @@ if __name__ == "__main__":
     #     filters=filters,
     # )
 
-    # add_columns_and_save(input_file="./data_out/data_out_100_1.csv",
+    # add_utility_rating_in_experiment_column(input_file="./data_out/data_out_100_1.csv",
     #                      output_file="./data_out/data_out_100_1.csv")
 
     # add_num_manipulations_ratio(input_file_path="./data_out/data_out_100_1.csv",
