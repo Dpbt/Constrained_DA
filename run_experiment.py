@@ -3,9 +3,6 @@ import random
 import pandas as pd
 import numpy as np
 
-from utils import generate_tests_from_lists, group_test_results
-from data_analysis import get_n_best_results
-
 from test_system import run_full_tests
 
 
@@ -20,7 +17,7 @@ np.random.seed(42)
 #     "num_repeat_sampler": [50],
 #     "epsilon": [0.002, 0.005, 0.01, 0.02],
 #     "manipulators_ratio": [0.25, 0.5, 0.75, 1],
-#     "num_manipulations": [0.25, 0.5, 0.75, 1],
+#     "num_manipulations_ratio": [0.25, 0.5, 0.75, 1],
 # }
 
 # params_lists = {
@@ -31,7 +28,7 @@ np.random.seed(42)
 #     "num_repeat_sampler": [50],
 #     "epsilon": [0.002, 0.005, 0.01],
 #     "manipulators_ratio": [0.5, 0.75, 1],
-#     "num_manipulations": [0.5, 0.75, 1],
+#     "num_manipulations_ratio": [0.5, 0.75, 1],
 # }
 
 params_lists = {
@@ -41,27 +38,26 @@ params_lists = {
     "num_repeats_profiles": [5],
     "num_repeat_sampler": [50],
     "epsilon": [0.001, 0.002, 0.005, 0.01],
-    "manipulators_ratio": [0.25, 0.5, 0.75, 1],
-    "num_manipulations": [0.5, 0.75, 1],
+    "manipulators_ratio": [0.25, 0.5, 0.75, 1.0],
+    "num_manipulations_ratio": [0.5, 0.75, 1.0],
 }
 
 params_lists = {
-    "num_students": [12, 14, 16],
+    "num_students": [12, 14],
     "num_schools": [3, 5, 8],
     "num_capacities": [5],
     "num_repeats_profiles": [5],
     "num_repeat_sampler": [50],
     "epsilon": [0.001],
-    "manipulators_ratio": [0.75, 1],
-    "num_manipulations": [1],
+    "manipulators_ratio": [0.75, 1.0],
+    "num_manipulations_ratio": [0.75, 1.0],
 }
-
 
 experiment_results = run_full_tests(params_lists=params_lists,
                                     batch_size=1,
                                     n_jobs=-2,
                                     display_progress=True,
-                                    save_path='./data_out/data_out_new.csv',
+                                    save_path='./data_out/data_out_new_2.csv',
                                     print_n_best_results=True,
                                     )
 

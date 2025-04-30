@@ -18,7 +18,9 @@ from data_analysis import get_n_best_results
 random.seed(42)
 np.random.seed(42)
 
-SAVE_PATH_DEFAULT = './data_out/data_out_default.csv'
+SAVE_PATH_DEFAULT = "./data_out/data_out_default.csv"
+
+pd.set_option('display.max_columns', None)
 
 
 def run_experiment_k(
@@ -53,7 +55,7 @@ def run_experiment_k(
         k (int): Length of preference lists (k <= num_schools)
         epsilon (float): Minimum utility improvement threshold
         fair_indices (np.ndarray): Indices of non-manipulating students
-        num_manipulations (int): Max manipulations per student
+        num_manipulations (int): Max manipulations per student (Calculated as round(num_manipulations_ratio * num_schools))
 
     Returns:
         Tuple containing:
@@ -115,7 +117,7 @@ def run_experiment(num_students: int,
                    num_repeat_sampler: int = 1000,
                    epsilon: float = 0.01,
                    manipulators_ratio: float = 1.0,
-                   num_manipulations: int = 3
+                   num_manipulations_ratio: float = 1.0,
                    ) -> list[pd.DataFrame]:
     """
         Runs an experiment with the given parameters (with already available school capacities) as follows.
@@ -138,7 +140,8 @@ def run_experiment(num_students: int,
             num_repeat_sampler (int): Number of repetitions of the algorithm on generated preference lists (default: 1000)
             epsilon (float): Minimum utility improvement threshold (default: 0.01)
             manipulators_ratio (float): Fraction of students allowed to manipulate (default: 1.0)
-            num_manipulations (int): Max manipulations per student (default: 3)
+            num_manipulations_ratio: Proportion of allowed manipulations from the num_schools parameter
+                                               (or will be set to default: 1.0)
 
         Returns:
             list[pd.DataFrame]: List of DataFrames, each containing results for one experiment configuration.
@@ -159,6 +162,7 @@ def run_experiment(num_students: int,
 
     num_fair = round(num_students * (1 - manipulators_ratio))
     fair_indices = np.random.choice(num_students, num_fair, replace=False)
+    num_manipulations = round(num_manipulations_ratio * num_schools)
     k_boston = num_schools  # Only full list for the Boston mechanism are supported now
 
     experiment_results = []
@@ -191,8 +195,8 @@ def run_experiment(num_students: int,
 
         new_row_boston = make_result_row_run_experiment(
             num_students, num_schools, start_time, capacities, capacities_generated, num_capacities,
-            num_repeats_profiles, num_repeat_sampler, epsilon, manipulators_ratio, num_manipulations,
-            "boston", k_boston, probabilities, utilities, manipulators,
+            num_repeats_profiles, num_repeat_sampler, epsilon, manipulators_ratio, num_manipulations_ratio,
+            num_manipulations, "boston", k_boston, probabilities, utilities, manipulators,
             avg_unassigned_total, avg_unassigned_fair, avg_unassigned_manipulator,
             avg_utility_fair, avg_utility_manipulator
         )
@@ -225,8 +229,8 @@ def run_experiment(num_students: int,
 
             new_row_gs = make_result_row_run_experiment(
                 num_students, num_schools, start_time, capacities, capacities_generated, num_capacities,
-                num_repeats_profiles, num_repeat_sampler, epsilon, manipulators_ratio, num_manipulations,
-                "gs", k_gs, probabilities, utilities, manipulators,
+                num_repeats_profiles, num_repeat_sampler, epsilon, manipulators_ratio, num_manipulations_ratio,
+                num_manipulations, "gs", k_gs, probabilities, utilities, manipulators,
                 avg_unassigned_total, avg_unassigned_fair, avg_unassigned_manipulator,
                 avg_utility_fair, avg_utility_manipulator
             )
@@ -250,7 +254,7 @@ def run_batch_experiment(tests: list[tuple[int, dict[str, Any]]]) -> pd.DataFram
         Parameters:
             tests (list[tuple[int, dict[str, Any]]]):
                 List of test configurations, where each element is a tuple (test_number, params_dict).
-                Each params_dict must contain at least 'num_students' and 'num_schools' keys, and may include:
+                Each params_dict must contain at least "num_students" and "num_schools" keys, and may include:
                     - capacities: School capacities (shape: (num_schools,))
                     - num_repeats_profiles: Number of random preference profiles to simulate
                                             (or will be set to default: 10)
@@ -258,7 +262,8 @@ def run_batch_experiment(tests: list[tuple[int, dict[str, Any]]]) -> pd.DataFram
                                           (or will be set to default: 1000)
                     - epsilon: Minimum utility improvement threshold (or will be set to default: 0.01)
                     - manipulators_ratio: Fraction of students allowed to manipulate (or will be set to default: 1.0)
-                    - num_manipulations: Max manipulations per student (or will be set to default: 3)
+                    - num_manipulations_ratio: Proportion of allowed manipulations from the num_schools parameter
+                                               (or will be set to default: 1.0)
                     - num_capacities: Number of capacity variants to generate
                                       (if capacities not provided, or will be set to default: 1)
 
@@ -267,7 +272,7 @@ def run_batch_experiment(tests: list[tuple[int, dict[str, Any]]]) -> pd.DataFram
                 Aggregated experiment results with columns including:
                     - experiment_number, num_students, num_schools, average_runtime, capacities, capacities_generated,
                       num_capacities, num_repeats_profiles, num_repeat_sampler, epsilon, manipulators_ratio,
-                      default_fair_num_student, num_manipulations, algorithm, k, k_to_schools_ratio, probabilities,
+                      default_fair_num_student, num_manipulations_ratio, num_manipulations, algorithm, k, k_to_schools_ratio, probabilities,
                       utilities, average_utility, average_number_manipulations, possible_percentage_manipulators,
                       average_actual_percentage_manipulators, average_percentage_unassigned_students,
                       average_percentage_unassigned_fair_students, average_percentage_unassigned_manipulator_students,
@@ -280,14 +285,14 @@ def run_batch_experiment(tests: list[tuple[int, dict[str, Any]]]) -> pd.DataFram
             - All warnings of type FutureWarning are suppressed during DataFrame concatenation to avoid verbose output.
 
         Raises:
-            KeyError: If required keys ('num_students', 'num_schools') are missing in the test configuration.
+            KeyError: If required keys ("num_students", "num_schools") are missing in the test configuration.
     """
     # Initialize results DataFrame with predefined columns
     test_results = pd.DataFrame(columns=[
         "num_students", "num_schools", "average_runtime", "capacities",
         "capacities_generated", "num_capacities", "num_repeats_profiles",
         "num_repeat_sampler", "epsilon", "manipulators_ratio",
-        "default_fair_num_student", "num_manipulations", "algorithm", "k",
+        "default_fair_num_student", "num_manipulations_ratio", "num_manipulations", "algorithm", "k",
         "probabilities", "utilities", "average_utility",
         "average_utility_fair_students", "average_utility_manipulator_students",
         "possible_percentage_manipulators", "average_actual_percentage_manipulators",
@@ -299,29 +304,31 @@ def run_batch_experiment(tests: list[tuple[int, dict[str, Any]]]) -> pd.DataFram
     # Process each test in batch
     for exp_number, test in tests:
         params = {
-            'num_students': test['num_students'],
-            'num_schools': test['num_schools']
+            "num_students": test["num_students"],
+            "num_schools": test["num_schools"]
         }
 
         # Add optional parameters
         optional_params = [
-            'num_repeats_profiles', 'num_repeat_sampler', 'epsilon',
-            'manipulators_ratio', 'num_manipulations'
+            "num_repeats_profiles", "num_repeat_sampler", "epsilon",
+            "manipulators_ratio", "num_manipulations_ratio"
         ]
         params.update({key: test[key] for key in optional_params if key in test})
 
         # Handle capacity generation
-        if 'capacities' in test:
+        if "capacities" in test:
             test_results = _process_existing_capacities(test, params, exp_number, test_results)
         else:
             test_results = _process_generated_capacities(test, params, exp_number, test_results)
 
     # Post-processing
     grouped_results = group_test_results(test_results)
+
     grouped_results.to_csv(
-        path_or_buf="./data_out/technical/test_results_100_{test_number}.csv",
+        path_or_buf=f"./data_out/technical/test_results_100_{tests[0][0]}.csv",
         index=False
     )
+
     return grouped_results
 
 
@@ -333,9 +340,9 @@ def _process_existing_capacities(
 ) -> pd.DataFrame:
     """Process tests with predefined capacities."""
     params.update({
-        'capacities': test['capacities'],
-        'capacities_generated': False,
-        'num_capacities': 1
+        "capacities": test["capacities"],
+        "capacities_generated": False,
+        "num_capacities": 1
     })
 
     return _execute_experiments(params, exp_number, test_results)
@@ -348,14 +355,14 @@ def _process_generated_capacities(
         test_results: pd.DataFrame
 ) -> pd.DataFrame:
     """Process tests with generating num_capacities capacities."""
-    params['capacities_generated'] = True
-    num_capacities = test.get('num_capacities', 1)
-    params['num_capacities'] = num_capacities
+    params["capacities_generated"] = True
+    num_capacities = test.get("num_capacities", 1)
+    params["num_capacities"] = num_capacities
 
     for _ in range(num_capacities):
-        params['capacities'] = generate_school_capacities(
-            num_students=test['num_students'],
-            num_schools=test['num_schools']
+        params["capacities"] = generate_school_capacities(
+            num_students=test["num_students"],
+            num_schools=test["num_schools"]
         )
 
         test_results = _execute_experiments(params, exp_number, test_results)
@@ -374,7 +381,7 @@ def _execute_experiments(
         experiment_results = run_experiment(**params)
 
         for df in experiment_results:
-            df.insert(0, 'experiment_number', exp_number + 1)
+            df.insert(0, "experiment_number", exp_number + 1)
 
         test_results = pd.concat([test_results, *experiment_results], ignore_index=True)
 
@@ -407,14 +414,14 @@ def parallel_run(
 
     # Split tests into batches
     batches = [
-        tests[i * batch_size : (i + 1) * batch_size]
+        tests[i * batch_size: (i + 1) * batch_size]
         for i in range(num_batches)
     ]
 
     # Configure parallel executor
     executor = Parallel(
         n_jobs=n_jobs,
-        backend='loky'
+        backend="loky"
     )
 
     # Prepare delayed tasks for execution
@@ -433,13 +440,16 @@ def parallel_run(
     # Concatenate results into a single DataFrame
     experiment_results = pd.concat(results, ignore_index=True)
 
+    experiment_results['utility_rating_in_experiment'] = experiment_results.groupby('experiment_number')[
+        'average_utility'].rank(ascending=False, method='dense')
+
     experiment_results = experiment_results[
-        ['experiment_number'] + [col for col in experiment_results.columns if col != 'experiment_number']]
+        ["experiment_number"] + [col for col in experiment_results.columns if col != "experiment_number"]]
 
     # Group results by params
-    experiment_results_grouped = group_test_results(experiment_results)
+    # experiment_results_grouped = group_test_results(experiment_results)
 
-    return experiment_results_grouped
+    return experiment_results
 
 
 def run_full_tests(params_lists: dict[str, list[Any]],
@@ -469,6 +479,10 @@ def run_full_tests(params_lists: dict[str, list[Any]],
     experiment_results.to_csv(path_or_buf=save_path, index=False)
 
     if print_n_best_results:
-        print(get_n_best_results(file_path=save_path, n=1))
+        result, best_k_to_schools_ratio_mean = get_n_best_results(file_path=save_path, n=1)
+        print("best k to schools ratios for all experiments:")
+        print(result)
+        print("average best k to schools ratios for all experiments:")
+        print(best_k_to_schools_ratio_mean)
 
     return experiment_results

@@ -413,6 +413,7 @@ def group_test_results(df: pd.DataFrame) -> pd.DataFrame:
 
             - Sorted by experiment_number, k, and algorithm
     """
+    pd.set_option('display.max_columns', None)
     # Configuration parameters for grouping
     groupby_columns = [
         "num_students",
@@ -424,7 +425,7 @@ def group_test_results(df: pd.DataFrame) -> pd.DataFrame:
         "epsilon",
         "manipulators_ratio",
         "default_fair_num_student",
-        "num_manipulations",
+        "num_manipulations_ratio",
         "algorithm",
         "k",
         "k_to_schools_ratio",
@@ -433,6 +434,7 @@ def group_test_results(df: pd.DataFrame) -> pd.DataFrame:
 
     # Metrics for averaging
     average_columns = [
+        "num_manipulations",
         "average_runtime",
         "average_utility",
         "average_utility_fair_students",
@@ -444,6 +446,8 @@ def group_test_results(df: pd.DataFrame) -> pd.DataFrame:
         "average_percentage_unassigned_manipulator_students",
     ]
 
+    # print(df)
+
     # Grouping and aggregation
     grouped_df = (
         df.groupby(groupby_columns)
@@ -453,6 +457,8 @@ def group_test_results(df: pd.DataFrame) -> pd.DataFrame:
         )
         .reset_index()
     )
+
+    # print(grouped_df)
 
     # Column reordering
     grouped_df = grouped_df[
@@ -505,10 +511,7 @@ def generate_tests_from_lists(**param_lists) -> list[dict]:
     for combo in combinations:
         dict_item = {}
         for name, value in zip(param_names, combo):
-            if name == "num_manipulations":
-                dict_item[name] = round(value * dict_item.get("num_schools", 1))
-            else:
-                dict_item[name] = value
+            dict_item[name] = value
         result.append(dict_item)
 
     return result
@@ -516,8 +519,8 @@ def generate_tests_from_lists(**param_lists) -> list[dict]:
 
 def make_result_row_run_experiment(
         num_students, num_schools, start_time, capacities, capacities_generated, num_capacities,
-        num_repeats_profiles, num_repeat_sampler, epsilon, manipulators_ratio, num_manipulations,
-        algorithm, k, probabilities, utilities, manipulators,
+        num_repeats_profiles, num_repeat_sampler, epsilon, manipulators_ratio, num_manipulations_ratio,
+        num_manipulations, algorithm, k, probabilities, utilities, manipulators,
         avg_unassigned_total, avg_unassigned_fair, avg_unassigned_manipulator,
         avg_utility_fair, avg_utility_manipulator
 ) -> dict[str, list]:
@@ -537,6 +540,7 @@ def make_result_row_run_experiment(
         "epsilon": [epsilon],
         "manipulators_ratio": [manipulators_ratio],
         "default_fair_num_student": [num_fair],
+        "num_manipulations_ratio": [num_manipulations_ratio],
         "num_manipulations": [num_manipulations],
         "algorithm": [algorithm],
         "k": [k],

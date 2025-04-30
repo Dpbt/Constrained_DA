@@ -129,42 +129,6 @@ def get_n_best_results(file_path: str, n=1):
     return result, best_k_to_schools_ratio_mean
 
 
-def add_utility_rating_in_experiment_column(input_file, output_file):
-    # Чтение DataFrame из файла
-    df = pd.read_csv(input_file)
-
-    # Добавление столбца utility_rating_in_experiment
-    df['utility_rating_in_experiment'] = df.groupby('experiment_number')['average_utility'].rank(ascending=False,
-                                                                                                 method='dense')
-    # Сохранение обновленного DataFrame в новый файл
-    df.to_csv(output_file, index=False)
-
-    print(f"Обновленный DataFrame сохранен в файл: {output_file}")
-
-    return df
-
-
-def add_num_manipulations_ratio(input_file_path, output_file_path):
-    # Чтение данных из входного файла
-    df = pd.read_csv(input_file_path)
-
-    # Функция для определения num_manipulations_ratio
-    def determine_ratio(num_manipulations, num_schools):
-        if num_schools == 0:
-            return np.nan
-        actual_ratio = num_manipulations / num_schools
-        possible_ratios = [0.25, 0.5, 0.75, 1.0]
-        return min(possible_ratios, key=lambda x: abs(x - actual_ratio))
-
-    # Добавляем новый столбец num_manipulations_ratio
-    df['num_manipulations_ratio'] = df.apply(lambda row: determine_ratio(row['num_manipulations'], row['num_schools']), axis=1)
-
-    # Сохранение обновленного DataFrame в выходной файл
-    df.to_csv(output_file_path, index=False)
-
-    print(f"Обработка завершена. Результаты сохранены в {output_file_path}")
-
-
 if __name__ == "__main__":
     pd.set_option("display.max_columns", None)
     pd.set_option("display.width", None)
