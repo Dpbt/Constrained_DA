@@ -1,6 +1,6 @@
 import numpy as np
 import itertools
-from algorithm import k_gs_algorithm, chinese_parallel_mechanism
+from algorithms import k_gs_algorithm, chinese_parallel_mechanism
 from utils import (AlgorithmEnum, generate_possible_preferences_chinese, generate_possible_preferences_k_gs,
                    generate_symmetric_preferences)
 

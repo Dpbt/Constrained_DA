@@ -7,7 +7,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
-from algorithm import algorithm_sampler, manipulation_algorithm
+from algorithms import algorithm_sampler, manipulation_algorithm
 from analysis import get_n_best_results
 from utils import (AlgorithmEnum, generate_random_profiles, generate_school_capacities,
                    generate_k_restricted_preferences, calculate_utilities_from_probs,
