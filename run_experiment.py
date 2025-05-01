@@ -1,13 +1,12 @@
-import os
 import random
-import pandas as pd
+
 import numpy as np
-
-from test_system import run_full_tests
-
 
 random.seed(42)
 np.random.seed(42)
+
+from test_system import run_full_tests
+
 
 # params_lists = {
 #     "num_students": [150],
@@ -57,11 +56,9 @@ experiment_results = run_full_tests(params_lists=params_lists,
                                     batch_size=1,
                                     n_jobs=-2,
                                     display_progress=True,
-                                    save_path='./data_out/data_out_new_2.csv',
+                                    save_path='./data_out/data_out_mod_test.csv',
                                     print_n_best_results=True,
                                     )
-
-
 
 # tests = generate_tests_from_lists(**params_lists)
 #
@@ -80,8 +77,6 @@ experiment_results = run_full_tests(params_lists=params_lists,
 #
 # pd.set_option('display.max_columns', None)
 #
-# random.seed(42)
-# np.random.seed(42)
 #
 # experiment_results = parallel_run_old(tests, batch_size=1, n_jobs=-2, display_progress=False)
 #

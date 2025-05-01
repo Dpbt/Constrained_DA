@@ -1,22 +1,18 @@
 import time
+import warnings
+from typing import Any
+
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 from tqdm import tqdm
-import warnings
-import random
-import os
-from typing import Any
 
+from algorithm import algorithm_sampler, manipulation_algorithm
+from analysis import get_n_best_results
 from utils import (AlgorithmEnum, generate_random_profiles, generate_school_capacities,
-                   generate_k_restricted_preferences, calculate_utilities, calculate_utilities_from_probs,
+                   generate_k_restricted_preferences, calculate_utilities_from_probs,
                    generate_unassigned_statistic, group_test_results, generate_tests_from_lists,
                    make_result_row_run_experiment)
-from algorithm import algorithm_sampler, manipulation_algorithm
-from data_analysis import get_n_best_results
-
-random.seed(42)
-np.random.seed(42)
 
 SAVE_PATH_DEFAULT = "./data_out/data_out_default.csv"
 
@@ -262,7 +258,7 @@ def run_batch_experiment(tests: list[tuple[int, dict[str, Any]]]) -> pd.DataFram
                                           (or will be set to default: 1000)
                     - epsilon: Minimum utility improvement threshold (or will be set to default: 0.01)
                     - manipulators_ratio: Fraction of students allowed to manipulate (or will be set to default: 1.0)
-                    - num_manipulations_ratio: Proportion of allowed manipulations from the num_schools parameter
+                    - num_manipulations_ratio: Fraction of allowed manipulations from the num_schools parameter
                                                (or will be set to default: 1.0)
                     - num_capacities: Number of capacity variants to generate
                                       (if capacities not provided, or will be set to default: 1)
