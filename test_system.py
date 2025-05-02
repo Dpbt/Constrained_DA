@@ -463,6 +463,8 @@ def run_full_tests(params_lists: dict[str, list[Any]],
         batch_size (int): Number of tests to process per batch (default: 1).
         n_jobs (int): Number of parallel jobs to run (default: 1).
         display_progress (bool): Whether to display a progress bar (default: False).
+        save_path (str): Path to save the results CSV file (default: SAVE_PATH_DEFAULT).
+        print_n_best_results (bool): Whether to print the best results (default: True).
 
     Returns:
         pd.DataFrame: DataFrame containing the results of the tests.
@@ -476,9 +478,9 @@ def run_full_tests(params_lists: dict[str, list[Any]],
 
     if print_n_best_results:
         result, best_k_to_schools_ratio_mean = get_n_best_results(file_path=save_path, n=1)
-        print("best k to schools ratios for all experiments:")
+        print("Best k to schools ratios for all experiments:")
         print(result)
-        print("average best k to schools ratios for all experiments:")
+        print("Average best k to schools ratios for all experiments:")
         print(best_k_to_schools_ratio_mean)
 
     return experiment_results

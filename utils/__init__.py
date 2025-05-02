@@ -22,6 +22,12 @@ from .statistic_utils import (
     generate_statistic,
     generate_unassigned_statistic,
 )
+from .postprocessing_utils import (
+    find_missing_files,
+    find_missing_experiments,
+    concatenate_csv_files,
+    filter_dataframe_by_conditions,
+)
 
 
 __all__ = [
@@ -41,4 +47,8 @@ __all__ = [
     "make_result_row_run_experiment",
     "generate_statistic",
     "generate_unassigned_statistic",
+    "find_missing_files",
+    "find_missing_experiments",
+    "concatenate_csv_files",
+    "filter_dataframe_by_conditions",
 ]

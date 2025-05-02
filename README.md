@@ -12,14 +12,27 @@ data for further research.
 
 ## Project Structure 
 
-- **`algorithm.py`**: Contains the implementation of school choice mechanisms and manipulation algorithms.
-- **`test_system.py`**: Core logic for running batch experiments and parallel processing.
-- **`run_experiment.py`**: Main script for configuring and running experiments.
-- **`utils.py`**: Helper functions for generating profiles, capacities, and utilities.
-- **`nash_equilibrium_searcher.py`**: 
-- **`data_analysis.py`**: Functions for analyzing and processing experiment results. 
-- **`plots_and_tables.py`**: 
-- **`data_out/`**: Directory for storing experiment results.
+- **`algorithms/`**: Contains the implementation of school choice mechanisms and manipulation algorithms
+  - **`boston.py`**: Implementation of the Boston mechanism with list length k
+  - **`chinese_parallel.py`**: Implementation of Chinese parallel mechanism with list length k at each round
+  - **`gale_shapley.py`**: Implementation of Deferred Acceptance mechanism with list length k
+  - **`manipulation.py`**: Algorithm for modeling student manipulation
+  - **`probs_estimator.py`**: Function to estimate students' probability of getting into each school based on preference lists
+  - **`sampler.py`**: Function for multiple simulations of the selected mechanism for preference lists submitted by students
+- **`utils/`**: Contains auxiliary functions for the other modules
+  - **`algorithm_enums.py`**: Enums for supported algorithms
+  - **`experiment_utils.py`**: Functions for job generation, dataframe grouping and result generation in the test system
+  - **`generation_utils.py`**: Functions for generating profiles, capacities, lists
+  - **`postprocessing_utils.py`**: Functions that can be useful during and after simulations before analyzing the data
+  - **`statistic_utils.py`**: Functions for generating statistics for preference lists and unassigned statistics for results
+  - **`utilities.py`**: Functions for calculating the expected utility of students 
+- **`analysis/`**: Contains functions for processing results, building tables for analysis, and a test system that checks all available preference lists and searches for a Nash equilibrium among them
+  - **`all_preferences_test_system.py`**: Test system that tests all available preference lists and searches for a Nash equilibrium (optionally symmetric) among them. It is convenient for analyzing small examples
+  - **`nash_equilibrium_searcher.py`**: Function for finding Nash equilibria (optionally symmetric)
+  - **`tables_generator.py`**: Functions for generating some tables for analyzing simulation results
+- **`data_out/`**: Directory for storing experiment results
+- **`test_system.py`**: Core logic for running simulations
+- **`run_experiment.py`**: Basic script for setting parameters and running simulations
 
 ---
 
@@ -97,17 +110,11 @@ The results are saved as CSV files in the `data_out` directory. Each file contai
 
 ---
 
-## Analysis Tools
-
-
-
----
-
 ## Example Workflow
 
 1. **Set Parameters**: Define parameter dictionaries in `run_experiment.py` or directly in the script.
 2. **Run Experiments**: Execute the script to generate results.
-3. **Analyze Results**: Use `data_analysis.py` to filter, group, or extract the best results.
+3. **Analyze Results**: Use `tables_generator.py` to build tables or extract best results.
 
 ---
 
@@ -115,7 +122,7 @@ The results are saved as CSV files in the `data_out` directory. Each file contai
 
 * [1] Balancing Incentives and Efficiency via Constrained Deferred Acceptance.\
   Denis Derkach and Alexander Nesterov.\
-  [[Bibtex](https://wonderren.github.io/files/bibtex_ren22emoa.txt)][[Paper](https://wonderren.github.io/files/ren22_emoa_socs.pdf)]
+  [[Bibtex](<link>)][[Paper](<link>)]
 
 ---
 
