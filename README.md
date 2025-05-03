@@ -30,7 +30,9 @@ data for further research.
   - **`all_preferences_test_system.py`**: Test system that tests all available preference lists and searches for a Nash equilibrium (optionally symmetric) among them. It is convenient for analyzing small examples
   - **`nash_equilibrium_searcher.py`**: Function for finding Nash equilibria (optionally symmetric)
   - **`tables_generator.py`**: Functions for generating some tables for analyzing simulation results
-- **`data_out/`**: Directory for storing experiment results
+- **`data_out/`**: Directory for storing experiment results (now contains the simulation results files for the paper)
+  - **`analysis/`**: Directory for graphs and tables, contains some tables from the paper
+  - **`technical/`**: A directory for saving intermediate results during simulations. Can be useful when simulations are stopped / error before full completion
 - **`test_system.py`**: Core logic for running simulations
 - **`run_experiment.py`**: Basic script for setting parameters and running simulations
 

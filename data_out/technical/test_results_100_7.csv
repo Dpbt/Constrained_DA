@@ -1,0 +1,7 @@
+experiment_number,num_students,num_schools,capacities_generated,num_capacities,num_repeats_profiles,num_repeat_sampler,epsilon,manipulators_ratio,default_fair_num_student,num_manipulations_ratio,algorithm,k,k_to_schools_ratio,possible_percentage_manipulators,num_manipulations,average_runtime,average_utility,average_utility_fair_students,average_utility_manipulator_students,average_actual_percentage_manipulators,average_number_manipulations,average_percentage_unassigned_students,average_percentage_unassigned_fair_students,average_percentage_unassigned_manipulator_students
+8.0,12,5,True,5,5,50,0.001,1.0,0,1.0,gs,1,0.2,100.0,5.0,0.3719114589691162,0.2077463519754706,0.0,0.2077463519754706,67.0,13.28,23.33333333333333,0.0,23.33333333333333
+8.0,12,5,True,5,5,50,0.001,1.0,0,1.0,gs,2,0.4,100.0,5.0,0.4034984397888184,0.2167532852320141,0.0,0.2167532852320141,74.0,16.36,15.093333333333335,0.0,15.093333333333335
+8.0,12,5,True,5,5,50,0.001,1.0,0,1.0,gs,3,0.6,100.0,5.0,0.44967954635620117,0.2129280474624586,0.0,0.2129280474624586,59.66666666666666,10.76,10.766666666666667,0.0,10.766666666666667
+8.0,12,5,True,5,5,50,0.001,1.0,0,1.0,gs,4,0.8,100.0,5.0,0.5022755908966064,0.21081001140334055,0.0,0.21081001140334055,44.33333333333333,5.88,5.493333333333334,0.0,5.493333333333334
+8.0,12,5,True,5,5,50,0.001,1.0,0,1.0,gs,5,1.0,100.0,5.0,0.5153937816619873,0.21154268637276136,0.0,0.21154268637276136,0.0,0.0,0.0,0.0,0.0
+8.0,12,5,True,5,5,50,0.001,1.0,0,1.0,boston,5,1.0,100.0,5.0,0.35716526985168456,0.2103517315271729,0.0,0.2103517315271729,0.0,0.0,0.0,0.0,0.0

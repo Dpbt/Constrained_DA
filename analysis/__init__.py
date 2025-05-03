@@ -5,7 +5,7 @@ from .all_preferences_test_system import (
     all_preferences_test,
 )
 from .tables_generator import (
-    utility_table_students_schools_k,
+    create_utility_table_students_schools_k,
     create_unassigned_students_table,
     create_comprehensive_table,
     create_comprehensive_table_k_lists,
@@ -16,7 +16,7 @@ from .tables_generator import (
 __all__ = [
     "find_nash_equilibrium",
     "all_preferences_test",
-    "utility_table_students_schools_k",
+    "create_utility_table_students_schools_k",
     "create_unassigned_students_table",
     "create_comprehensive_table",
     "create_comprehensive_table_k_lists",
