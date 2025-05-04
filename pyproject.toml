@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "diplom-1"
+name = "constrained_da"
 version = "0.1.0"
 description = ""
 authors = ["Dpbt <denisderkach2003@gmail.com>"]
