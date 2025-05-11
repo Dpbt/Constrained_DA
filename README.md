@@ -18,7 +18,7 @@ In addition to the system of simulations and algorithms, the toolkit includes su
 
 ## Principle of the simulation system
 
-The main system of the project is started from the `run_experiment.py` file and works according to the following scheme: 
+The main system of the project is started from the `test_system/run_experiment.py` file and works according to the following scheme: 
 
 The system simulates school enrollment mechanisms, student behavior (i.e., manipulations) for the $DA^k$ mechanism 
 with different list lengths. The Boston mechanism with a fair list (without manipulations) of equal length to the number 
@@ -79,8 +79,9 @@ as well as using the documentation for the functions in this repository.
 - **`data_out/`**: Directory for storing experiment results (now contains the simulation results files for the paper)
   - **`analysis/`**: Directory for graphs and tables, contains some tables from the paper
   - **`technical/`**: A directory for saving intermediate results during simulations. Can be useful when simulations are stopped / error before full completion
-- **`test_system.py`**: Core logic for running simulations
-- **`run_experiment.py`**: Basic script for setting parameters and running simulations
+- **`test_system/`**: Main system for running simulations
+  - **`run_experiment.py`**: Basic script for setting parameters and running simulations
+  - **`test_system.py`**: Core logic for running simulations
 
 ---
 
@@ -115,14 +116,14 @@ as well as using the documentation for the functions in this repository.
 
 ### Running Experiments
 
-The main entry point for running experiments is `run_experiment.py`. 
+The main entry point for running experiments is `test_system/run_experiment.py`. 
 You can customize and run experiments by providing parameter dictionaries in this file.
 
 
 #### Example Command:
 
 ```bash
-python run_experiment.py
+python -m test_system.run_experiment
 ```
 
 #### Example of parameter setting:
@@ -194,7 +195,7 @@ The results are saved as CSV files in the `data_out` directory. Each file contai
 
 ## Example Workflow
 
-1. **Set Parameters**: Define parameter dictionaries in `run_experiment.py` or directly in the script.
+1. **Set Parameters**: Define parameter dictionaries in `test_system/run_experiment.py` or directly in the script.
 2. **Run Experiments**: Execute the script to generate results.
 3. **Analyze Results**: Use `tables_generator.py` to build tables or extract best results.
 
