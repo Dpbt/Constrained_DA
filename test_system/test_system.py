@@ -1,6 +1,7 @@
 import time
 import warnings
 from typing import Any
+import os
 
 import numpy as np
 import pandas as pd
@@ -14,7 +15,7 @@ from utils import (AlgorithmEnum, generate_random_profiles, generate_school_capa
                    generate_unassigned_statistic, group_test_results, generate_tests_from_lists,
                    make_result_row_run_experiment)
 
-SAVE_PATH_DEFAULT = "./data_out/data_out_default.csv"
+SAVE_PATH_DEFAULT = "../data_out/data_out_default.csv"
 
 pd.set_option('display.max_columns', None)
 
@@ -321,7 +322,7 @@ def run_batch_experiment(tests: list[tuple[int, dict[str, Any]]]) -> pd.DataFram
     grouped_results = group_test_results(test_results)
 
     grouped_results.to_csv(
-        path_or_buf=f"./data_out/technical/test_results_100_{tests[0][0]}.csv",
+        path_or_buf=f"../data_out/technical/test_results_100_{tests[0][0]}.csv",
         index=False
     )
 
@@ -405,6 +406,8 @@ def parallel_run(
     Returns:
         pd.DataFrame: Concatenated results from all test batches.
     """
+    os.makedirs('../data_out/technical', exist_ok=True)
+
     # Calculate the number of batches, rounding up
     num_batches = (len(tests) + batch_size - 1) // batch_size
 
@@ -477,7 +480,7 @@ def run_full_tests(params_lists: dict[str, list[Any]],
     experiment_results.to_csv(path_or_buf=save_path, index=False)
 
     if print_n_best_results:
-        result, best_k_to_schools_ratio_mean = get_n_best_results(file_path=save_path, n=1)
+        result, best_k_to_schools_ratio_mean = get_n_best_results(input_file_path=save_path, n=1)
         print("Best k to schools ratios for all experiments:")
         print(result)
         print("Average best k to schools ratios for all experiments:")

@@ -47,6 +47,6 @@ experiment_results = run_full_tests(params_lists=params_lists,
                                     batch_size=1,
                                     n_jobs=-2,
                                     display_progress=True,
-                                    save_path='./data_out/data_out_new_simulation.csv',
+                                    save_path='../data_out/data_out_new_simulation.csv',
                                     print_n_best_results=True,
                                     )

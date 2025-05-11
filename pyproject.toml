@@ -6,7 +6,7 @@ authors = ["Dpbt <denisderkach2003@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.11"
 numpy = "^2.2.2"
 pandas = "^2.2.3"
 joblib = "^1.4.2"

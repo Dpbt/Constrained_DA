@@ -6,4 +6,4 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./data_out/:/app/data_out/
-    command: python3 run_experiment.py
+    command: python3 -m test_system.run_experiment
