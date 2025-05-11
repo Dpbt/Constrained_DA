@@ -159,9 +159,38 @@ The results are saved as CSV files in the `data_out` directory. Each file contai
 - Percentages of unassigned students
 - Metrics related to a specific algorithm
 - List length ranking within a specific set of parameters
-- other statistics
+- Other statistics
 
 ---
+
+## Running using docker
+
+1. Install Docker and Docker Compose:
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y docker.io docker-compose
+   sudo systemctl enable --now docker
+   ```
+
+2. Transfer the Project Files to the Server.
+
+3. Build and Start the Project:
+   ```bash
+   sudo docker-compose up --build -d
+   ```
+
+4. Check the Logs:
+   ```bash
+   sudo docker-compose logs -f
+   ```
+
+5. Stop and Remove the Containers:
+   ```bash
+   sudo docker-compose down
+   ```
+   
+---
+
 
 ## Example Workflow
 
