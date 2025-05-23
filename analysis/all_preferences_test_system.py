@@ -1,5 +1,6 @@
 import numpy as np
 import itertools
+from collections import defaultdict
 from algorithms import k_gs_algorithm, chinese_parallel_mechanism
 from utils import (AlgorithmEnum, generate_possible_preferences_chinese, generate_possible_preferences_k_gs,
                    generate_symmetric_preferences)
@@ -15,11 +16,12 @@ def all_preferences_test(
         algorithm: AlgorithmEnum = AlgorithmEnum.CHINESE_PARALLEL_MECHANISM,
 ) -> list[tuple[np.ndarray, np.ndarray]]:
     """
-    Exhaustively tests all symmetric preference combinations against school permutations.
+    Exhaustively tests all symmetric preference combinations against school permutations,
+    as well as individual deviations from symmetric strategies.
 
     Conducts full factorial analysis of student-school matching by evaluating:
 
-    - All possible symmetric student preference profiles
+    - All possible symmetric student preference profiles and individual deviations from them
 
     - Every school preference permutation
 
@@ -88,8 +90,28 @@ def all_preferences_test(
         get_possible_preferences_func=get_possible_preferences_func
     )
 
+    profile_groups = defaultdict(list)
+    for idx, profile in enumerate(profiles):
+        profile_groups[tuple(profile)].append(idx)
+
+    all_profiles_set = set()
+
+    for sym_profile in all_symmetric_preferences:
+        all_profiles_set.add(tuple(map(tuple, sym_profile)))
+
+        for group in profile_groups.values():
+            representative = group[0]
+            for alt_pref in get_possible_preferences_func(num_schools, k):
+                if np.array_equal(alt_pref, sym_profile[representative]):
+                    continue
+                new_profile = sym_profile.copy()
+                new_profile[representative] = alt_pref
+                all_profiles_set.add(tuple(map(tuple, new_profile)))
+
+    all_profiles = [np.array(profile, dtype=np.int32) for profile in all_profiles_set]
+
     results = []
-    for i, preferences in enumerate(all_symmetric_preferences):
+    for i, preferences in enumerate(all_profiles):
         preferences_utils = np.zeros(num_students)
 
         # Test against all school preference orders
@@ -130,12 +152,12 @@ def run_all_preferences_test():
     """
     # Some examples of profiles from the article
 
-    # profiles = np.array([
-    #     [54, 23, 15, 8],
-    #     [54, 23, 15, 8],
-    #     [38, 32, 30, 0],
-    #     [38, 32, 30, 0],
-    # ])
+    profiles = np.array([
+        [54, 23, 15, 8],
+        [54, 23, 15, 8],
+        [38, 32, 30, 0],
+        [38, 32, 30, 0],
+    ])
 
     # profiles = np.array([
     #     [90, 6, 4, 0],
@@ -144,17 +166,17 @@ def run_all_preferences_test():
     #     [90, 10, 0, 0],
     # ])
 
-    profiles = np.array([
-        [50, 40, 5, 3, 2],
-        [50, 40, 5, 3, 2],
-        [50, 40, 5, 3, 2],
-        [50, 40, 5, 3, 2],
-        [50, 40, 5, 4, 1],
-    ])
+    # profiles = np.array([
+    #     [50, 40, 5, 3, 2],
+    #     [50, 40, 5, 3, 2],
+    #     [50, 40, 5, 3, 2],
+    #     [50, 40, 5, 3, 2],
+    #     [50, 40, 5, 4, 1],
+    # ])
 
     num_schools = profiles.shape[1]
     num_students = profiles.shape[0]
-    k = 3
+    k = 2
     capacities = np.array([1 for _ in range(num_schools)])
 
     results = all_preferences_test(
@@ -166,8 +188,6 @@ def run_all_preferences_test():
         algorithm=AlgorithmEnum.CHINESE_PARALLEL_MECHANISM,
         # algorithm=AlgorithmEnum.K_GS_MECHANISM,
     )
-
-    print(results)
 
     find_nash_equilibrium(results=results, profiles=profiles, symmetric=True)
 

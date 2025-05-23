@@ -63,48 +63,22 @@ def find_nash_equilibrium(
             utils_groups.setdefault(key, []).append(player_idx)
 
     def is_nash_equilibrium(strategy_profile):
-        """Core equilibrium verification logic"""
         current_utilities = utility_dict[strategy_profile]
 
-        if symmetric:
-            # Group-based deviation check
-            for group_indices in utils_groups.values():
-                group_strategy = strategy_profile[group_indices[0]]
-
-                if any(strategy_profile[i] != group_strategy for i in group_indices):
+        for player_idx in range(num_players):
+            for candidate_strategy in players_strategies[player_idx]:
+                if candidate_strategy == strategy_profile[player_idx]:
                     continue
 
-                for candidate_strategy in players_strategies[group_indices[0]]:
-                    if candidate_strategy == group_strategy:
-                        continue
+                new_profile = list(strategy_profile)
+                new_profile[player_idx] = candidate_strategy
+                new_profile = tuple(new_profile)
 
-                    # Simulate group deviation
-                    new_profile = list(strategy_profile)
-                    for i in group_indices:
-                        new_profile[i] = candidate_strategy
-                    new_profile = tuple(new_profile)
+                if new_profile not in utility_dict:
+                    continue
 
-                    if new_profile not in utility_dict:
-                        continue
-
-                    if all(utility_dict[new_profile][i] > current_utilities[i] for i in group_indices):
-                        return False
-        else:
-            # Individual deviation check
-            for player_idx in range(num_players):
-                for candidate_strategy in players_strategies[player_idx]:
-                    if candidate_strategy == strategy_profile[player_idx]:
-                        continue
-
-                    new_profile = list(strategy_profile)
-                    new_profile[player_idx] = candidate_strategy
-                    new_profile = tuple(new_profile)
-
-                    if new_profile not in utility_dict:
-                        continue
-
-                    if utility_dict[new_profile][player_idx] > current_utilities[player_idx]:
-                        return False
+                if utility_dict[new_profile][player_idx] > current_utilities[player_idx]:
+                    return False
         return True
 
     # Profile generation and validation
